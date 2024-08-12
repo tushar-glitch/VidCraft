@@ -1,0 +1,8 @@
+1 - Remember that username cannot have @ symbol.
+2 - Currently, video is saving in one go in aws-s3 bucket. Later, chunk them and then save it.
+3 - In compressor, currently only mp4 supported when uploading to s3
+4 - Status ->
+    0 - > Video uploading in backend server
+    1 - > Processing started
+    2 - > Video processed
+    3 - > Exporting
