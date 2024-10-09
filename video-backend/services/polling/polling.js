@@ -21,7 +21,7 @@ client.connect(function (err) {
 
 const service = {
     1: 'compressor',
-    2: 'transcoder'
+    2: 'resizer'
 }
 
 
@@ -71,7 +71,7 @@ const get_service = async (key) => {
 }
 
 const processMessage = async (message) => {
-    console.log('Compression started!')
+    console.log('Processing started!')
     if (message && message.Body) {
         const body = JSON.parse(message.Body);
 
@@ -84,6 +84,9 @@ const processMessage = async (message) => {
             // call service here
             if (forward_to_service == 'compressor') {
                 await axios.post(`${process.env.backend_endpoint_compressor}${forward_to_service}`, { bucket, key });
+            }
+            else if (forward_to_service == 'resizer') {
+                await axios.post(`${process.env.backend_endpoint_transcoder}${forward_to_service}`, { bucket, key, })
             }
             else {
                 console.log('Kya kar raha bhai!!');

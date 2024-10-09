@@ -21,6 +21,8 @@ const Compressor = () => {
   const [video_unit, setVideo_unit] = useState();
   const [compressing_message, setCompressing_message] = useState("");
   const [fakeCounter, setFakeCounter] = useState(1);
+  const [fileSize, setFileSize] = useState(null);
+  const [videoOutputFormat, setVideoOutputFormat] = useState("mp4");
 
   localStorage.setItem("com_counter", 1);
 
@@ -54,7 +56,8 @@ const Compressor = () => {
   const handleFileChange = (event) => {
     const file = event.target.files[0];
     setSelectedFile(file);
-    setDownloadUrl(null); // Reset download URL when a new file is selected
+    setFileSize(file.size);
+    setDownloadUrl(null);
   };
 
   const poll_for_final_video = async (file_key) => {
@@ -66,7 +69,7 @@ const Compressor = () => {
       status = res.data.status;
       if (status === 3) {
         setDownloadUrl(res.data.url);
-        console.log(res.data.url)
+        console.log(res.data.url);
         setIsCompressing(false);
         setVideo_size(res.data.size);
         setVideo_unit(res.data.unit);
@@ -94,6 +97,9 @@ const Compressor = () => {
       setProgress(value);
     }
   };
+  const handleoutputvideoformat = (e) => {
+    setVideoOutputFormat(e.target.value);
+  };
 
   useEffect(() => {
     if (isCompressing) {
@@ -101,9 +107,9 @@ const Compressor = () => {
       const interval = setInterval(() => {
         if (counter <= Object.keys(fakeMsg).length) {
           setCompressing_message(fakeMsg[counter]);
-          var number = 100
-          var number_array = (fakeMsg[counter].match(/\d+/));
-          if(number_array) number = parseInt(number_array[0])
+          var number = 100;
+          var number_array = fakeMsg[counter].match(/\d+/);
+          if (number_array) number = parseInt(number_array[0]);
           setProgress(number);
           counter++;
         } else {
@@ -119,9 +125,55 @@ const Compressor = () => {
     if (!selectedFile) return;
 
     setIsCompressing(true);
+
+    // try {
+    //   const result = await axios.post(
+    //     "http://localhost:4000/api/v1/video/upload",
+    //     { service: 1, number_of_chunks: 100 }
+    //   );
+    //   var presigned_urls = result.data;
+    //   let parts = [];
+    //   const uploadPromises = [];
+    //   const temp = []
+    //   const chunk_size = fileSize / 100;
+    //   for (let i = 0; i < 100; i++) {
+    //     let start = i * chunk_size;
+    //     let end = Math.min(start + chunk_size, fileSize);
+    //     let chunk = selectedFile.slice(start, end);
+    //     let presignedUrl = presigned_urls[i];
+    //     console.log("tushar", selectedFile.type)
+    //     uploadPromises.push(
+    //       axios.put(presignedUrl, chunk, {
+    //         headers: {
+    //           "Content-Type": 'video/mp4',
+    //         },
+    //       })
+    //     );
+    //     temp.push({presignedUrl, chunk})
+    //   }
+    //   console.log(temp);
+
+    //   const uploadResponses = await Promise.all(uploadPromises);
+
+    //   uploadResponses.forEach((response, i) => {
+    //     // existing response handling
+
+    //     parts.push({
+    //       etag: response.headers.etag,
+    //       PartNumber: i + 1,
+    //     });
+    //   });
+
+    //   console.log("Parts- ", parts);
+    // } catch (err) {
+    //   console.log(err);
+    // }
+
     const formData = new FormData();
     formData.append("service", 1);
     formData.append("file", selectedFile);
+    formData.append("output_video_format", videoOutputFormat);
+    formData.append("compression_ratio", compressionRatio);
 
     try {
       const result = await axios.post(
@@ -197,10 +249,11 @@ const Compressor = () => {
                   <select
                     id="output-format"
                     className="px-1 py-1 border border-gray-300 text-[#2e92ff] rounded-md shadow-sm focus:outline-none focus:ring-2"
+                    onClick={handleoutputvideoformat}
                   >
-                    <option value="mp4">MKV</option>
+                    <option value="mp4">MP4</option>
                     <option value="mov">MOV</option>
-                    <option value="mkv">MP4</option>
+                    <option value="mkv">MKV</option>
                     <option value="avi">AVI</option>
                   </select>
                 </div>
@@ -235,17 +288,17 @@ const Compressor = () => {
                 {/* <p className="mt-1 text-green-400 font-semibold">
                   {compressing_message}
                 </p> */}
-                {isCompressing &&
-                <div className="flex flex-col items-center">
-                  <p className="mt-2 text-green-400">{compressing_message}</p>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-green-400 h-2 rounded-full"
-                      style={{ width: `${progress}%` }}
-                    ></div>
+                {isCompressing && (
+                  <div className="flex flex-col items-center">
+                    <p className="mt-2 text-green-400">{compressing_message}</p>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-green-400 h-2 rounded-full"
+                        style={{ width: `${progress}%` }}
+                      ></div>
+                    </div>
                   </div>
-                </div>
-                }
+                )}
 
                 <button
                   onClick={handleCompress}
@@ -278,10 +331,19 @@ const Compressor = () => {
                         type="number"
                         value={compressionRatio}
                         onChange={(e) => setCompressionRatio(e.target.value)}
+                        onInput={(e) => {
+                          const value = Math.max(
+                            0,
+                            Math.min(100, e.target.value)
+                          ); // Restrict the value between 1 and 100
+                          setCompressionRatio(value);
+                          e.target.value = value; // Update the input field with the restricted value
+                        }}
                         className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#2e92ff] border-[#2e92ff] appearance-none -moz-appearance-none -webkit-appearance-none"
                         min={0}
                         max={100}
                       />
+
                       <span className="absolute inset-y-0 right-3 flex items-center text-gray-500">
                         %
                       </span>
@@ -304,79 +366,6 @@ const Compressor = () => {
               </>
             )}
           </div>
-
-          // <div className="text-center">
-          //   <p className="text-lg mb-4 text-gray-700">
-          //     <span className="font-bold">Selected File: </span>{" "}
-          //     {selectedFile.name}
-          //   </p>
-          //   <p className="text-lg mb-4 text-gray-700">
-          //     <span className="font-bold">File size: </span>{" "}
-          //     {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
-          //   </p>
-          //   {downloadUrl ? (
-          //     <a
-          //       href={downloadUrl}
-          //       download
-          //       className="bg-[#2e92ff] text-white text-lg font-bold mx-40 mt-5 py-4 px-8 rounded-lg shadow-lg mt-4 hover:bg-[#1c6eff] flex items-center justify-center"
-          //       rel="noopener noreferrer"
-          //     >
-          //       Download
-          //     </a>
-          //   ) : (
-          //     <>
-          //       <button
-          //         onClick={handleCompress}
-          //         disabled={isCompressing}
-          //         className={`bg-[#2e92ff] text-white text-lg font-bold mx-40 mt-5 py-4 px-8 rounded-lg shadow-lg mt-4 ${
-          //           isCompressing
-          //             ? "cursor-not-allowed opacity-50"
-          //             : "hover:bg-[#1c6eff]"
-          //         } flex items-center justify-center`}
-          //       >
-          //         {isCompressing ? (
-          //           <>
-          //             Compressing
-          //             <FiLoader className="ml-2 w-5 h-5 animate-spin" />
-          //           </>
-          //         ) : (
-          //           "Compress Now"
-          //         )}
-          //       </button>
-          //       <div className="mt-6 border border-[#2e92ff] rounded-lg p-4">
-          //         <h3 className="text-xl font-semibold text-gray-700 mb-4">
-          //           Additional settings (optional)
-          //         </h3>
-          //         <div className="mb-4">
-          //           <label className="block text-lg font-medium text-gray-700">
-          //             Compression Ratio
-          //           </label>
-          //           <input
-          //             type="number"
-          //             value={compressionRatio}
-          //             onChange={(e) => setCompressionRatio(e.target.value)}
-          //             className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#2e92ff] border-[#2e92ff]"
-          //             min={0}
-          //             max={100}
-          //           />
-          //         </div>
-          //         <div className="mb-4">
-          //           <label className="block text-lg font-medium text-gray-700">
-          //             Video Codec
-          //           </label>
-          //           <select
-          //             value={videoCodec}
-          //             onChange={(e) => setVideoCodec(e.target.value)}
-          //             className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#2e92ff] border-[#2e92ff]"
-          //           >
-          //             <option value="H264">H264</option>
-          //             <option value="H265">H265</option>
-          //           </select>
-          //         </div>
-          //       </div>
-          //     </>
-          //   )}
-          // </div>
         )}
       </div>
 

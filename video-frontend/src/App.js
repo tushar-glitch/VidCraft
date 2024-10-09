@@ -5,6 +5,7 @@ import Navbar from './components/Navbar';
 import Home from './components/Home';
 import Compressor from './components/Compressor';
 import Resizer from './components/Resizer';
+import API_page from './components/API_page';
 
 const App = () => {
   return (
@@ -14,6 +15,7 @@ const App = () => {
         <Route path="/" element={<Home />} />
         <Route path="/compress" element={<Compressor />} />
         <Route path="/resize" element={<Resizer/>} />
+        <Route path="/api" element={<API_page/>} />
       </Routes>
     </Router>
   );

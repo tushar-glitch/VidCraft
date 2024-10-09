@@ -6,3 +6,7 @@
     1 - > Processing started
     2 - > Video processed
     3 - > Exporting
+5 - Output format bina ffmpeg ke installation ke nahi hoga
+
+
+ - ab dekho ki compress ke baad desired format mein video download ni hori, hn but compression ratio pegfect chal ra

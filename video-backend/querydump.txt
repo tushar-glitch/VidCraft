@@ -2,4 +2,8 @@ create user table query = create table users (id serial primary key, firstname v
 create video table query = create table video (id serial primary key, name varchar(255) not null, session_id UUID REFERENCES session(session_token), user_id integer REFERENCES users(id) on delete set null, duration integer, url text not null, service integer not null, file_key_name text not null default sample_name, created_at timestamp default current_timestamp, updated_at timestamp default current_timestamp)
 create thumbnails table query = create table thumbnails (id serial primary key, url varchar(512) not null, posted_by integer not null, created_at timestamp default current_timestamp, updated_at timestamp default current_timestamp)
 create session table query = create table session (id serial primary key, session_token uuid unique not null, user_id integer REFERENCES users(id) on delete set null, created_at timestamp default current_timestamp)
+create service table query = createa table service (id serial primary key, file_key text not null, compression_size integer default null, compression_video_format varchar(10) default null, compression_codec varchar(20) default null, )
 
+
+Important queries to execute - 
+1 - To find all the column names in a table - select column_name from information_schema.columns where table_name = 'video'
