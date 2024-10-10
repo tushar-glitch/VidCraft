@@ -1,9 +1,30 @@
-import React, { useState } from 'react';
-import { FiX } from 'react-icons/fi';
+import React, { useState } from "react";
+import { FiX } from "react-icons/fi";
+import axios from "axios";
 
-const SignIn = ({ isOpen, onClose }) => {
+const SignUp = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
-
+  const handlesignup = () => {
+    const fname = document.getElementById("fname").value;
+    const lname = document.getElementById("lname").value;
+    const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      if (fname && email && password) {
+          axios
+              .post("http://localhost:4000/api/v1/auth/register", {
+                  firstname: fname,
+                  lastname: lname,
+                  email: email,
+                  password: password,
+              })
+              .then((res) => {
+                  console.log(res.data);
+              })
+              .catch((err) => {
+                  console.log(err);
+              });
+      }
+  };
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-gray-800 bg-opacity-50"
@@ -15,7 +36,9 @@ const SignIn = ({ isOpen, onClose }) => {
       >
         {/* Modal header */}
         <div className="flex items-center justify-between p-4 border-b">
-          <h3 className="text-xl font-semibold text-gray-900">Sign in to our platform</h3>
+          <h3 className="text-xl font-semibold text-gray-900">
+            Sign in to our platform
+          </h3>
           <button
             type="button"
             className="text-gray-400 hover:text-gray-900"
@@ -28,9 +51,42 @@ const SignIn = ({ isOpen, onClose }) => {
         {/* Modal body */}
         <div className="p-4">
           <form className="space-y-4">
+            <div className="flex space-x-8">
+              <div>
+                <label
+                  htmlFor="fname"
+                  className="block mb-2 text-sm font-medium text-gray-900"
+                >
+                  Your First name
+                </label>
+                <input
+                  type="text"
+                  name="fname"
+                  id="fname"
+                  className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+                  placeholder="First name"
+                  required
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="lname"
+                  className="block mb-2 text-sm font-medium text-gray-900"
+                >
+                  Your Last name
+                </label>
+                <input
+                  type="lname"
+                  name="lname"
+                  id="lname"
+                  className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+                  placeholder="Last name"
+                />
+              </div>
+            </div>
             <div>
               <label
-                htmlFor="email"
+                htmlFor="lname"
                 className="block mb-2 text-sm font-medium text-gray-900"
               >
                 Your email
@@ -66,7 +122,6 @@ const SignIn = ({ isOpen, onClose }) => {
                   id="remember"
                   type="checkbox"
                   className="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-blue-300"
-                  required
                 />
                 <label
                   htmlFor="remember"
@@ -75,22 +130,14 @@ const SignIn = ({ isOpen, onClose }) => {
                   Remember me
                 </label>
               </div>
-              <a href="#" className="text-sm text-blue-700 hover:underline">
-                Forgot Password?
-              </a>
             </div>
             <button
               type="submit"
               className="w-full text-white bg-[#2e92ff] hover:bg-blue-800 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
+              onClick={handlesignup}
             >
-              Login to your account
+              Create your account
             </button>
-            <div className="text-sm font-medium text-gray-500">
-              Not registered?{' '}
-              <a href="#" className="text-blue-700 hover:underline">
-                Create account
-              </a>
-            </div>
           </form>
         </div>
       </div>
@@ -98,4 +145,4 @@ const SignIn = ({ isOpen, onClose }) => {
   );
 };
 
-export default SignIn;
+export default SignUp;

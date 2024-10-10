@@ -11,6 +11,7 @@ const ffmpegPath = require('ffmpeg-static');
 const mime = require('mime-types')
 const { getVideoDurationInSeconds } = require('get-video-duration')
 const axios = require('axios')
+const {exec} = require('child_process')
 
 
 ffmpeg.setFfmpegPath(ffmpegPath);
@@ -62,55 +63,38 @@ const resizeVideo = async (inputFilePath, outputFilePath, width, height) => {
     // });
 
     return new Promise((resolve, reject) => {
-        exec(`ffprobe -v error -select_streams v:0 -show_entries stream=bit_rate -of default=noprint_wrappers=1:nokey=1 ${inputFilePath}`, (err, bitrate, stderr) => {
+        exec(`ffmpeg -i ${inputFilePath} -vf "scale=${width}:${height}" -c:v libx264 -c:a aac -b:a 128k -aspect ${width}:${height} ${outputFilePath}`, (err, stdout, stderr) => {
             if (err) {
                 console.error(err);
                 reject(err); // Reject the promise on error
                 return;
             }
             if (stderr) {
-                // console.error(stderr);
-                // reject(stderr); // Reject the promise on stderr
-                // return;
-            }
-
-            var req_bitrate = bitrate * compression_ratio;
-            // exec(`ffmpeg -i ${inputFilePath} -b:v ${Math.ceil(req_bitrate / 1000)}k -bufsize ${Math.ceil(req_bitrate / 1000)}k ${outputFilePath}`, (err, stdout, stderr) => {
-            exec(`ffmpeg -i ${inputFilePath} -c:v libx264 -b:v ${Math.ceil(req_bitrate / 1000)}k -c:a aac -b:a 128k ${outputFilePath}`, (err, stdout, stderr) => {
-                console.log(`ffmpeg -i ${inputFilePath} -c:v libx264 -b:v ${Math.ceil(req_bitrate / 1000)}k -c:a aac -b:a 128k ${outputFilePath}`);
                 
-                if (err) {
-                    console.error(err);
-                    reject(err); // Reject the promise on error
-                    return;
-                }
-                if (stderr) {
-                    // console.error(stderr);
-                    // reject(stderr); // Reject the promise on stderr
-                    // return;
-                }
-
-                console.log("Compression finished", req_bitrate);
-                resolve(); // Resolve the promise when done
-            });
+            }
+            console.log("Resizing finished bro!");
+            resolve()
         });
     });
 };
 
 
 
-const uploadToS3 = async (res, outputFilePath, key) => {
-    const fileMime = mime.lookup('mp4') || 'application/octet-stream';
+const uploadToS3 = async (res, outputFilePath, key, output_video_format) => {
+    // const fileMime = mime.lookup('mp4') || 'application/octet-stream';
+    console.log('Tushar1');
+    
     const fileSize = fs.statSync(outputFilePath).size;
     const file_size_in_mb = fileSize / (1024 * 1024).toFixed(2)
     const output_file_size = (file_size_in_mb >= 1) ? (file_size_in_mb) : (file_size_in_mb * 1024);
     const file_unit = (file_size_in_mb >= 1) ? ("MB") : ("KB");
     const params = {
         Bucket: process.env.AWS_BUCKET_NAME,
-        Key: key,
+        Key: `${key}.${output_video_format}`,
         Body: fs.createReadStream(outputFilePath),
-        // ContentType: 'video/mp4'
+        ContentType: `video/${output_video_format}`
     }
+    console.log('Tushar2');
     s3.upload(params, async (err, data) => {
         if (err) {
             console.log(err);
@@ -119,10 +103,10 @@ const uploadToS3 = async (res, outputFilePath, key) => {
             console.log("File uploaded successfully", data);
             const urlParams = {
                 Bucket: process.env.AWS_BUCKET_NAME,
-                Key: key,
+                Key: `${key}.${output_video_format}`,
                 Expires: 8 * 60 * 60, // 8 hour
-                ResponseContentDisposition: `attachment; filename="${key}.mp4"`,
-                ResponseContentType: 'video/mp4'
+                ResponseContentDisposition: `attachment; filename="${key}.${output_video_format}"`,
+                ResponseContentType: `video/${output_video_format}`
             };
             s3.getSignedUrl('getObject', urlParams, async (err, url) => {
                 if (err) console.log(err);
@@ -155,6 +139,7 @@ app.post('/api/v1/resizer', async (req, res) => {
         Key: key
     }
     var req_height, req_width
+    var output_video_format = 'mp4'
     const query = 'select req_width, req_height from video where file_key_name = $1'
     client.query(query, [key], async (err, result) => {
         if (err) {
@@ -162,8 +147,10 @@ app.post('/api/v1/resizer', async (req, res) => {
             res.status(400).json({ msg: "Failed to upload video!" })
         }
         else {
-            req_width = result.rows[0].req_width
-            req_height = result.rows[0].req_height
+            req_width = result.rows[0].req_width;
+            req_height = result.rows[0].req_height;
+            (req_width % 2 == 1) ? req_width++ : req_width;
+            (req_height % 2 == 1) ? req_height++ : req_height;
         }
     })
 
@@ -174,7 +161,8 @@ app.post('/api/v1/resizer', async (req, res) => {
         await writeFileAsync(downloadPath, data.Body);
         await resizeVideo(downloadPath, outputPath, req_width, req_height)
         await axios.post(`${process.env.backend_endpoint}changestatus`, { video_id: key, status: 2 });
-        await uploadToS3(res, outputPath, key)
+        await uploadToS3(res, outputPath, key, output_video_format)
+        console.log('Tushar');
         await axios.post(`${process.env.backend_endpoint}changestatus`, { video_id: key, status: 3 });
     }
     catch (err) {

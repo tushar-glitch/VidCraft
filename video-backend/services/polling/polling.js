@@ -108,6 +108,21 @@ const processMessage = async (message) => {
         } catch (error) {
             console.error('Error downloading video from S3', error);
         }
+        finally {
+            // After processing, delete the message from the queue
+            const deleteParams = {
+                QueueUrl: queueUrl,
+                ReceiptHandle: message.ReceiptHandle
+            };
+
+            sqs.deleteMessage(deleteParams, (err, data) => {
+                if (err) {
+                    console.error('Error deleting message from SQS', err);
+                } else {
+                    console.log('Message deleted', data);
+                }
+            });
+        }
     }
 };
 

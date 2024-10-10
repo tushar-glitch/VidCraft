@@ -9,4 +9,4 @@
 5 - Output format bina ffmpeg ke installation ke nahi hoga
 
 
- - ab dekho ki compress ke baad desired format mein video download ni hori, hn but compression ratio pegfect chal ra
+ - resizer shuru kar dia hai, ab output format wala dekhlo

@@ -16,7 +16,7 @@ app.use(cors())
 
 client.connect(function (err) {
   if (err) throw err;
-  client.query("", [], function (err, result) {
+  client.query("select * from users", [], function (err, result) {
     if (err) throw err;
 
     console.log(result.rows);

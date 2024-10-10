@@ -17,6 +17,8 @@ const is_username_present = async (username) => {
 }
 
 exports.register = async (req, res) => {
+    console.log('Api called!');
+    
     const { firstname, lastname, email, password } = req.body
     try {
         var username = firstname + Math.floor((((Math.random() * 9) + 1)) * 1000)
