@@ -23,6 +23,7 @@ const Compressor = () => {
   const [fakeCounter, setFakeCounter] = useState(1);
   const [fileSize, setFileSize] = useState(null);
   const [videoOutputFormat, setVideoOutputFormat] = useState("mp4");
+  const [isLogin, setIsLogin] = useState(false)
 
   localStorage.setItem("com_counter", 1);
 
@@ -55,9 +56,25 @@ const Compressor = () => {
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
-    setSelectedFile(file);
-    setFileSize(file.size);
-    setDownloadUrl(null);
+    if (!file) return;
+    const sizeinmb = file.size / 1024 / 1024;
+    console.log(sizeinmb);
+
+    if (
+      (sessionStorage.getItem("isSignedIn") && sizeinmb <= 100) ||
+      sizeinmb <= 50
+    ) {
+      setSelectedFile(file);
+      setFileSize(file.size);
+      setDownloadUrl(null);
+    } else if (sessionStorage.getItem("isSignedIn")) {
+      alert(
+        "Please upgrade your plan to compress video with size greater than 100MB"
+      );
+    } else {
+      console.log("3");
+      alert("Please Sign Up to compress video with size greater than 50MB");
+    }
   };
 
   const poll_for_final_video = async (file_key) => {
@@ -121,69 +138,93 @@ const Compressor = () => {
     }
   }, [isCompressing]);
 
+  useEffect(() => {
+    const updateLoginStatus = () => {
+      setIsLogin(sessionStorage.getItem('isSignedIn'));
+    };
+  
+    window.addEventListener('loginStatusChanged', updateLoginStatus);
+    updateLoginStatus();
+    return () => {
+      window.removeEventListener('loginStatusChanged', updateLoginStatus);
+    };
+  }, []);
+
   const handleCompress = async () => {
     if (!selectedFile) return;
+    const sizeinmb = selectedFile.size / 1024 / 1024;
+    if (
+      (sessionStorage.getItem("isSignedIn") && sizeinmb <= 100) ||
+      sizeinmb <= 50
+    ) {
+      setIsCompressing(true);
 
-    setIsCompressing(true);
+      // try {
+      //   const result = await axios.post(
+      //     "http://localhost:4000/api/v1/video/upload",
+      //     { service: 1, number_of_chunks: 100 }
+      //   );
+      //   var presigned_urls = result.data;
+      //   let parts = [];
+      //   const uploadPromises = [];
+      //   const temp = []
+      //   const chunk_size = fileSize / 100;
+      //   for (let i = 0; i < 100; i++) {
+      //     let start = i * chunk_size;
+      //     let end = Math.min(start + chunk_size, fileSize);
+      //     let chunk = selectedFile.slice(start, end);
+      //     let presignedUrl = presigned_urls[i];
+      //     console.log("tushar", selectedFile.type)
+      //     uploadPromises.push(
+      //       axios.put(presignedUrl, chunk, {
+      //         headers: {
+      //           "Content-Type": 'video/mp4',
+      //         },
+      //       })
+      //     );
+      //     temp.push({presignedUrl, chunk})
+      //   }
+      //   console.log(temp);
 
-    // try {
-    //   const result = await axios.post(
-    //     "http://localhost:4000/api/v1/video/upload",
-    //     { service: 1, number_of_chunks: 100 }
-    //   );
-    //   var presigned_urls = result.data;
-    //   let parts = [];
-    //   const uploadPromises = [];
-    //   const temp = []
-    //   const chunk_size = fileSize / 100;
-    //   for (let i = 0; i < 100; i++) {
-    //     let start = i * chunk_size;
-    //     let end = Math.min(start + chunk_size, fileSize);
-    //     let chunk = selectedFile.slice(start, end);
-    //     let presignedUrl = presigned_urls[i];
-    //     console.log("tushar", selectedFile.type)
-    //     uploadPromises.push(
-    //       axios.put(presignedUrl, chunk, {
-    //         headers: {
-    //           "Content-Type": 'video/mp4',
-    //         },
-    //       })
-    //     );
-    //     temp.push({presignedUrl, chunk})
-    //   }
-    //   console.log(temp);
+      //   const uploadResponses = await Promise.all(uploadPromises);
 
-    //   const uploadResponses = await Promise.all(uploadPromises);
+      //   uploadResponses.forEach((response, i) => {
+      //     // existing response handling
 
-    //   uploadResponses.forEach((response, i) => {
-    //     // existing response handling
+      //     parts.push({
+      //       etag: response.headers.etag,
+      //       PartNumber: i + 1,
+      //     });
+      //   });
 
-    //     parts.push({
-    //       etag: response.headers.etag,
-    //       PartNumber: i + 1,
-    //     });
-    //   });
+      //   console.log("Parts- ", parts);
+      // } catch (err) {
+      //   console.log(err);
+      // }
 
-    //   console.log("Parts- ", parts);
-    // } catch (err) {
-    //   console.log(err);
-    // }
+      const formData = new FormData();
+      formData.append("service", 1);
+      formData.append("file", selectedFile);
+      formData.append("output_video_format", videoOutputFormat);
+      formData.append("compression_ratio", compressionRatio);
 
-    const formData = new FormData();
-    formData.append("service", 1);
-    formData.append("file", selectedFile);
-    formData.append("output_video_format", videoOutputFormat);
-    formData.append("compression_ratio", compressionRatio);
-
-    try {
-      const result = await axios.post(
-        "http://localhost:4000/api/v1/video/upload",
-        formData
+      try {
+        const result = await axios.post(
+          "http://localhost:4000/api/v1/video/upload",
+          { formData },
+          { withCredentials: true }
+        );
+        await poll_for_final_video(result.data.file_unique_key);
+      } catch (error) {
+        console.error("Error during compression:", error);
+        setIsCompressing(false);
+      }
+    } else if (sessionStorage.getItem("isSignedIn")) {
+      alert(
+        "Please upgrade your plan to compress video with size greater than 100MB"
       );
-      await poll_for_final_video(result.data.file_unique_key);
-    } catch (error) {
-      console.error("Error during compression:", error);
-      setIsCompressing(false);
+    } else {
+      alert("Please Sign Up to compress video with size greater than 50MB");
     }
   };
 
@@ -212,13 +253,24 @@ const Compressor = () => {
                 onChange={handleFileChange}
               />
             </label>
-            <p className="text-sm text-gray-600 mt-3">
-              Max file size 100MB.{" "}
-              <span className="underline text-[#2e92ff] cursor-pointer">
-                Sign Up
-              </span>{" "}
-              for more.
-            </p>
+
+            {!isLogin ? (
+              <>
+                <p className="text-sm text-gray-600 mt-3">
+                  Max file size 50MB.{" "}
+                  <span className="underline text-[#2e92ff] cursor-pointer">
+                    Sign Up
+                  </span>{" "}
+                  for more.
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-gray-600 mt-3">
+                  Max file size 100MB.
+                </p>
+              </>
+            )}
           </>
         ) : (
           <div className="max-w-2xl mx-auto bg-white border border-gray-200 rounded-lg shadow-md p-6">

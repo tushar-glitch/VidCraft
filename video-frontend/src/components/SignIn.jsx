@@ -1,9 +1,40 @@
-import React, { useState } from 'react';
-import { FiX } from 'react-icons/fi';
+import React, { useState } from "react";
+import { FiX } from "react-icons/fi";
+import axios from "axios";
 
-const SignIn = ({ isOpen, onClose }) => {
+const backend_endpoint = process.env.REACT_APP_BACKEND_URL;
+
+const SignIn = ({ isOpen, onClose, setLoggedIn }) => {
   if (!isOpen) return null;
+  const handleLogin = (e) => {
+    e.preventDefault();
+    const emailorusername = document.getElementById("emailorusername").value;
+    const password = document.getElementById("password").value;
+    console.log(emailorusername, password);
 
+    if (emailorusername && password) {
+      axios
+        .post(
+          `${backend_endpoint}auth/login`,
+          {
+            username_or_email: emailorusername,
+            password: password,
+          },
+          {
+            withCredentials: true,
+          }
+        )
+        .then((res) => {
+          setLoggedIn(true);
+          sessionStorage.setItem("isSignedIn", true)
+          window.dispatchEvent(new Event('loginStatusChanged'));
+          onClose();
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    }
+  };
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-gray-800 bg-opacity-50"
@@ -15,7 +46,9 @@ const SignIn = ({ isOpen, onClose }) => {
       >
         {/* Modal header */}
         <div className="flex items-center justify-between p-4 border-b">
-          <h3 className="text-xl font-semibold text-gray-900">Sign in to our platform</h3>
+          <h3 className="text-xl font-semibold text-gray-900">
+            Sign in to our platform
+          </h3>
           <button
             type="button"
             className="text-gray-400 hover:text-gray-900"
@@ -30,17 +63,17 @@ const SignIn = ({ isOpen, onClose }) => {
           <form className="space-y-4">
             <div>
               <label
-                htmlFor="email"
+                htmlFor="text"
                 className="block mb-2 text-sm font-medium text-gray-900"
               >
-                Your email
+                Your email or username
               </label>
               <input
-                type="email"
-                name="email"
-                id="email"
+                type="text"
+                name="emailorusername"
+                id="emailorusername"
                 className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-                placeholder="name@company.com"
+                placeholder="Username or email"
                 required
               />
             </div>
@@ -66,7 +99,6 @@ const SignIn = ({ isOpen, onClose }) => {
                   id="remember"
                   type="checkbox"
                   className="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-blue-300"
-                  required
                 />
                 <label
                   htmlFor="remember"
@@ -82,11 +114,12 @@ const SignIn = ({ isOpen, onClose }) => {
             <button
               type="submit"
               className="w-full text-white bg-[#2e92ff] hover:bg-blue-800 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
+              onClick={handleLogin}
             >
               Login to your account
             </button>
             <div className="text-sm font-medium text-gray-500">
-              Not registered?{' '}
+              Not registered?{" "}
               <a href="#" className="text-blue-700 hover:underline">
                 Create account
               </a>

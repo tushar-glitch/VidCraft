@@ -7,6 +7,6 @@ const upload = multer({ dest: './uploads/' });
 const router = express.Router();
 
 // router.post('/upload', session, auth, upload.single('file'),  uploadVideo)
-router.post('/upload', upload.single('file'),  uploadVideo)
+router.post('/upload', auth, upload.single('file'),  uploadVideo)
 // router.post('/upload', uploadVideo2)
 module.exports = router;

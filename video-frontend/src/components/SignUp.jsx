@@ -2,28 +2,37 @@ import React, { useState } from "react";
 import { FiX } from "react-icons/fi";
 import axios from "axios";
 
-const SignUp = ({ isOpen, onClose }) => {
+const backend_endpoint = process.env.REACT_APP_BACKEND_URL;
+
+const SignUp = ({ isOpen, onClose, setLoggedIn }) => {
   if (!isOpen) return null;
-  const handlesignup = () => {
+  const handlesignup = (e) => {
+    e.preventDefault();
     const fname = document.getElementById("fname").value;
     const lname = document.getElementById("lname").value;
     const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-      if (fname && email && password) {
-          axios
-              .post("http://localhost:4000/api/v1/auth/register", {
-                  firstname: fname,
-                  lastname: lname,
-                  email: email,
-                  password: password,
-              })
-              .then((res) => {
-                  console.log(res.data);
-              })
-              .catch((err) => {
-                  console.log(err);
-              });
-      }
+    const password = document.getElementById("password").value;
+    if (fname && email && password) {
+      axios
+        .post(`${backend_endpoint}auth/register`, {
+          firstname: fname,
+          lastname: lname,
+          email: email,
+          password: password,
+        },
+          {
+            withCredentials: true,
+          }
+        )
+        .then((res) => {
+          sessionStorage.setItem("isSignedIn", true);
+          setLoggedIn(true);
+          onClose();
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    }
   };
   return (
     <div
@@ -132,7 +141,7 @@ const SignUp = ({ isOpen, onClose }) => {
               </div>
             </div>
             <button
-              type="submit"
+              type="button"
               className="w-full text-white bg-[#2e92ff] hover:bg-blue-800 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center"
               onClick={handlesignup}
             >

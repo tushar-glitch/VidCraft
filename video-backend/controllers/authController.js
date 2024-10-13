@@ -18,7 +18,7 @@ const is_username_present = async (username) => {
 
 exports.register = async (req, res) => {
     console.log('Api called!');
-    
+
     const { firstname, lastname, email, password } = req.body
     try {
         var username = firstname + Math.floor((((Math.random() * 9) + 1)) * 1000)
@@ -32,7 +32,19 @@ exports.register = async (req, res) => {
         // Inserting into DB
         const query = 'INSERT INTO users (firstname, lastname, email, password, username) VALUES ($1, $2, $3, $4, $5) RETURNING *'
         const result = await client.query(query, [firstname, lastname, email, hashed_password, username])
-        res.status(201).json({ user: result.rows[0] })
+        const user = result.rows[0]
+        const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '90d' })
+
+        // Sending token in cookie
+        res.cookie('token', token, {
+            httpOnly: true,
+            // secure: false,
+            secure: process.env.NODE_ENV === 'production',
+            maxAge: 90 * 24 * 60 * 60 * 1000,
+            sameSite: 'Lax'
+        })
+
+        res.status(200).json({ user: user, token: token })
     }
     catch (err) {
         console.log(err)
@@ -55,10 +67,12 @@ exports.login = async (req, res) => {
                     // Sending token in cookie
                     res.cookie('token', token, {
                         httpOnly: true,
+                        // secure: false,
                         secure: process.env.NODE_ENV === 'production',
                         maxAge: 90 * 24 * 60 * 60 * 1000,
+                        sameSite: 'Lax'
                     })
-                    
+
                     res.status(200).json({ user: user, token: token })
                 }
                 else {
@@ -96,5 +110,19 @@ exports.login = async (req, res) => {
             console.log(err)
             res.status(400).json({ msg: 'Login failed' })
         }
+    }
+}
+
+exports.login_status = async (req, res) => {
+    if (req.cookies.token) {
+        const { token } = req.cookies
+        const verifyToken = jwt.verify(token, process.env.JWT_SECRET);
+        if (verifyToken) {
+            res.json({ loggedIn: true });
+        } else {
+            res.json({ loggedIn: false });
+        }
+    } else {
+        res.json({ loggedIn: false });
     }
 }

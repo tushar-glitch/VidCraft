@@ -9,14 +9,18 @@ const authRouter = require('./routes/authRouter')
 const thumbnailRouter = require('./routes/thumbnailRouter')
 const cookieParser = require('cookie-parser');
 const cors = require('cors')
+const auth = require('./middleware/auth')
 
 app.use(cookieParser());
-app.use(cors())
+app.use(cors({
+  origin: "http://localhost:3000",
+  credentials: true
+}))
 
 
 client.connect(function (err) {
   if (err) throw err;
-  client.query("select * from users", [], function (err, result) {
+  client.query("", [], function (err, result) {
     if (err) throw err;
 
     console.log(result.rows);
@@ -31,6 +35,11 @@ app.use('/api/v1/video', videoRouter)
 app.use('/api/v1/auth', authRouter)
 app.use('/api/v1/thumbnail', thumbnailRouter)
 
+//Dummy api
+// app.get('/api/v1/hello', (req, res, next) => {
+//   auth(req, res, next)
+//   res.status(200).json({ message: 'Hello World!' })
+// })
 
 // Check status of the video
 app.get('/api/v1/status', async (req, res) => {
