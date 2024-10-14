@@ -9,4 +9,4 @@
 5 - Output format bina ffmpeg ke installation ke nahi hoga
 
 
- - resizer shuru kar dia hai, ab output format wala dekhlo
+

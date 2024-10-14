@@ -50,7 +50,12 @@ exports.uploadVideo = async (req, res) => {
     const compression_ratio = req.body.compression_ratio
     
     const file_key = req.file.filename
-
+    const file_size = req.file.size / 1024 / 1024 / 1024
+    
+    if (file_size > req.max_video_size) {
+        return res.status(400).json({ msg: "File size is too large" })
+    }
+    
     if (service) {
         const filePath = `uploads/${req.file.filename}`;
         console.log("File uploading started...");

@@ -201,7 +201,8 @@ const Compressor = () => {
       // } catch (err) {
       //   console.log(err);
       // }
-
+      
+      
       const formData = new FormData();
       formData.append("service", 1);
       formData.append("file", selectedFile);
@@ -211,7 +212,7 @@ const Compressor = () => {
       try {
         const result = await axios.post(
           "http://localhost:4000/api/v1/video/upload",
-          { formData },
+          formData,
           { withCredentials: true }
         );
         await poll_for_final_video(result.data.file_unique_key);

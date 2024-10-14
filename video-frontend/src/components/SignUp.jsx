@@ -36,7 +36,7 @@ const SignUp = ({ isOpen, onClose, setLoggedIn }) => {
   };
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-gray-800 bg-opacity-50"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-gray-800 bg-opacity-50 ubuntu-light"
       onClick={onClose}
     >
       <div

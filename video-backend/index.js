@@ -7,6 +7,7 @@ const client = require('./db/conn')
 const videoRouter = require('./routes/videoRouter')
 const authRouter = require('./routes/authRouter')
 const thumbnailRouter = require('./routes/thumbnailRouter')
+const premiumRouter = require('./routes/premiumRouter')
 const cookieParser = require('cookie-parser');
 const cors = require('cors')
 const auth = require('./middleware/auth')
@@ -34,6 +35,7 @@ client.connect(function (err) {
 app.use('/api/v1/video', videoRouter)
 app.use('/api/v1/auth', authRouter)
 app.use('/api/v1/thumbnail', thumbnailRouter)
+app.use('/api/v1/plan', premiumRouter)
 
 //Dummy api
 // app.get('/api/v1/hello', (req, res, next) => {

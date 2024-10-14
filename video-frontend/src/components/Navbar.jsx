@@ -59,7 +59,7 @@ const Navbar = () => {
           <div className="flex">
             <div className="shrink-0 flex items-center">
               <a href="/" className="text-xl font-bold text-gray-800">
-                Editor
+                VidCraft
               </a>
             </div>
           </div>
@@ -67,13 +67,13 @@ const Navbar = () => {
             <a href="/" className="text-gray-600 hover:text-[#2e92ff]">
               Tools
             </a>
-            <a href="/" className="text-gray-600 hover:text-[#2e92ff]">
+            <a href="/pricing" className="text-gray-600 hover:text-[#2e92ff]">
               Pricing
             </a>
             <a href="/api" className="text-gray-600 hover:text-[#2e92ff]">
               API
             </a>
-            <a href="/" className="text-gray-600 hover:text-[#2e92ff]">
+            <a href="/contact" className="text-gray-600 hover:text-[#2e92ff]">
               Contact Us
             </a>
           </div>
