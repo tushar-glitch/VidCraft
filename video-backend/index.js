@@ -21,7 +21,7 @@ app.use(cors({
 
 client.connect(function (err) {
   if (err) throw err;
-  client.query("", [], function (err, result) {
+  client.query("select column_name from information_schema.columns where table_name = 'users'", [], function (err, result) {
     if (err) throw err;
 
     console.log(result.rows);
