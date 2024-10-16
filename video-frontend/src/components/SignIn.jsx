@@ -5,12 +5,37 @@ import axios from "axios";
 const backend_endpoint = process.env.REACT_APP_BACKEND_URL;
 
 const SignIn = ({ isOpen, onClose, setLoggedIn }) => {
+  const [errors, setErrors] = useState({
+    password: ""
+  });
+
   if (!isOpen) return null;
+
   const handleLogin = (e) => {
     e.preventDefault();
     const emailorusername = document.getElementById("emailorusername").value;
     const password = document.getElementById("password").value;
-    console.log(emailorusername, password);
+
+    setErrors({
+      password: ""
+    });
+
+    const passRegex = /^(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{6,16}$/
+
+    const validate_pass = (pass) => {
+      return (
+        pass.match(passRegex)
+      )
+    }
+
+    if (!password) {
+      setErrors((prev) => ({ ...prev, password: "Password is required" }));
+      return;
+    }
+    if (!validate_pass(password)) {
+      setErrors((prev) => ({ ...prev, password: "Please enter a valid password" }));
+      return;
+    }
 
     if (emailorusername && password) {
       axios
@@ -34,6 +59,7 @@ const SignIn = ({ isOpen, onClose, setLoggedIn }) => {
           console.log(err);
         });
     }
+    else return
   };
   return (
     <div
@@ -92,6 +118,9 @@ const SignIn = ({ isOpen, onClose, setLoggedIn }) => {
                 className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
                 required
               />
+              {errors.password && (
+                <p className="text-red-500 text-sm mt-1">{errors.password}</p>
+              )}
             </div>
             <div className="flex justify-between">
               <div className="flex items-center">

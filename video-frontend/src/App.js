@@ -7,6 +7,7 @@ import Compressor from './components/Compressor';
 import Resizer from './components/Resizer';
 import API_page from './components/API_page';
 import Pricing from './components/Pricing';
+import Footer from './components/Footer';
 
 const App = () => {
   return (
@@ -19,6 +20,7 @@ const App = () => {
         <Route path="/api" element={<API_page />} />
         <Route path="/pricing" element={<Pricing/>}/>
       </Routes>
+      <Footer/>
     </Router>
   );
 };

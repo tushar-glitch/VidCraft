@@ -1,0 +1,367 @@
+openapi: 3.0.3
+info:
+  title: Video Processing API
+  description: |-
+    This is an API for a powerful video processing web application that allows users to upload, compress, resize, and convert videos. The API provides endpoints for user registration and login, as well as various video processing features. You can find out more about our application and its features on our website.
+
+    Users can upload their videos securely and receive processed video links in response. We aim to ensure privacy and efficiency, with support for various video formats and quick processing times.
+
+    _If you're looking for the API documentation for earlier versions, please refer to the documentation available on our website._
+
+    Some useful links:
+    - [Video Processing Documentation](http://yourwebsite.com/docs)
+  termsOfService: http://yourwebsite.com/terms
+  contact:
+    email: support@yourwebsite.com
+  license:
+    name: MIT License
+    url: http://opensource.org/licenses/MIT
+  version: 1.0.0
+externalDocs:
+  description: Find out more about our video processing features
+  url: http://yourwebsite.com
+servers:
+  - url: http://localhost:4000/api/v1
+tags:
+  - name: user
+    description: Operations related to user management
+  - name: video
+    description: Operations related to video processing
+paths:
+  /register:
+    post:
+      tags:
+        - user
+      summary: Register a new user
+      description: Register a new user and return a JWT in cookies
+      operationId: registerUser
+      requestBody:
+        description: Register a new user
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstname:
+                  type: string
+                  example: L
+                lastname:
+                  type: string
+                  example: Lawliet
+                email:
+                  type: string
+                  example: lawliet@email.com
+                password:
+                  type: string
+                  example: '12345'
+              required:
+                - firstname
+                - lastname
+                - email
+                - password
+          application/xml:
+            schema:
+              type: object
+              properties:
+                firstname:
+                  type: string
+                  example: L
+                lastname:
+                  type: string
+                  example: Lawliet
+                email:
+                  type: string
+                  example: lawliet@email.com
+                password:
+                  type: string
+                  example: '12345'
+              required:
+                - firstname
+                - lastname
+                - email
+                - password
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                firstname:
+                  type: string
+                  example: L
+                lastname:
+                  type: string
+                  example: Lawliet
+                email:
+                  type: string
+                  example: lawliet@email.com
+                password:
+                  type: string
+                  example: '12345'
+              required:
+                - firstname
+                - lastname
+                - email
+                - password
+        required: true
+      responses:
+        '200':
+          description: User successfully registered
+          headers:
+            Set-Cookie:
+              description: The JWT token is sent as a cookie
+              schema:
+                type: string
+                example: jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; Path=/; Max-Age=90d
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid input
+        '422':
+          description: Validation exception
+      security:
+        - petstore_auth:
+            - write:pets
+            - read:pets
+  /login:
+    post:
+      tags:
+        - user
+      summary: User login
+      description: Authenticates the user and returns a JWT token in the cookies
+      operationId: loginUser
+      requestBody:
+        description: User login credentials
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  example: lawliet@email.com
+                password:
+                  type: string
+                  example: '12345'
+              required:
+                - email
+                - password
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  example: lawliet@email.com
+                password:
+                  type: string
+                  example: '12345'
+              required:
+                - email
+                - password
+        required: true
+      responses:
+        '200':
+          description: User successfully logged in
+          headers:
+            Set-Cookie:
+              description: The JWT token is sent as a cookie
+              schema:
+                type: string
+                example: jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; Path=/; Max-Age=90d
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Login successful!"
+        '401':
+          description: Invalid credentials
+        '422':
+          description: Validation exception
+      security:
+        - petstore_auth:
+            - write:pets
+            - read:pets
+            
+  /video/upload/1:
+    post:
+      tags:
+        - video
+      summary: Compress a video
+      description: Upload a video file along with required parameters for processing
+      operationId: compressVideo
+      requestBody:
+        description: Video file upload with additional parameters
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                service:
+                  type: integer
+                  example: 1
+                file:
+                  type: string
+                  format: binary
+                output_video_format:
+                  type: string
+                  example: 'mp4'
+                compression_ratio:
+                  type: number
+                  format: float
+                  example: 0.5
+              required:
+                - service
+                - file
+                - output_video_format
+                - compression_ratio
+        required: true
+      responses:
+        '200':
+          description: Video uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Video uploaded successfully"
+                  videoUrl:
+                    type: string
+                    example: "http://example.com/path/to/video"
+        '400':
+          description: Invalid input parameters
+        '401':
+          description: Unauthorized - invalid API token
+        '422':
+          description: Validation exception
+      security:
+        - api_key: []
+      headers:
+        x-vidcraft-token:
+          description: API token for user authentication
+          required: true
+          schema:
+            type: string
+            
+  /video/upload/2:
+    post:
+      tags:
+        - video
+      summary: Resize a video
+      description: Upload a video file along with required parameters for processing
+      operationId: resizeVideo
+      requestBody:
+        description: Video file upload with additional parameters
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                service:
+                  type: integer
+                  example: 2
+                file:
+                  type: string
+                  format: binary
+                output_video_format:
+                  type: string
+                  example: 'mp4'
+                req_height:
+                  type: number
+                  format: float
+                  example: 720
+                req_width:
+                  type: number
+                  format: float
+                  example: 720
+              required:
+                - service
+                - file
+                - output_video_format
+                - req_height
+                - req_width
+        required: true
+      responses:
+        '200':
+          description: Video uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Video uploaded successfully"
+                  videoUrl:
+                    type: string
+                    example: "http://example.com/path/to/video"
+        '400':
+          description: Invalid input parameters
+        '401':
+          description: Unauthorized - invalid API token
+        '422':
+          description: Validation exception
+      security:
+        - api_key: []
+      headers:
+        x-vidcraft-token:
+          description: API token for user authentication
+          required: true
+          schema:
+            type: string
+
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 10
+        username:
+          type: string
+          example: theUser
+        firstname:
+          type: string
+          example: L
+        lastname:
+          type: string
+          example: Lawliet
+        email:
+          type: string
+          example: lawliet@email.com
+        password:
+          type: string
+          example: '12345'
+        is_premium:
+          type: boolean
+          example: true
+        membership_type:
+          type: integer
+          format: int32
+          example: 1
+      xml:
+        name: user
+        
+  securitySchemes:
+    petstore_auth:
+      type: oauth2
+      flows:
+        implicit:
+          authorizationUrl: https://petstore3.swagger.io/oauth/authorize
+          scopes:
+            write:pets: modify pets in your account
+            read:pets: read your pets
+    api_key:
+      type: apiKey
+      name: api_key
+      in: header
