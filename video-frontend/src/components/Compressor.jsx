@@ -20,7 +20,7 @@ const Compressor = () => {
   const [video_size, setVideo_size] = useState();
   const [video_unit, setVideo_unit] = useState();
   const [compressing_message, setCompressing_message] = useState("");
-  const [fakeCounter, setFakeCounter] = useState(1);
+  // const [fakeCounter, setFakeCounter] = useState(1);
   const [fileSize, setFileSize] = useState(null);
   const [videoOutputFormat, setVideoOutputFormat] = useState("mp4");
   const [isLogin, setIsLogin] = useState(false)
@@ -97,16 +97,16 @@ const Compressor = () => {
     }
   };
 
-  const fakeMsg = {
-    1: "Uploading 45%",
-    2: "Uploading 91%",
-    3: "Compressing 12%",
-    4: "Compressing 45%",
-    5: "Compressing 78%",
-    6: "Compressing 98%",
-    7: "Compressing 100%",
-    8: "Exporting...",
-  };
+  // const fakeMsg = {
+  //   1: "Uploading 45%",
+  //   2: "Uploading 91%",
+  //   3: "Compressing 12%",
+  //   4: "Compressing 45%",
+  //   5: "Compressing 78%",
+  //   6: "Compressing 98%",
+  //   7: "Compressing 100%",
+  //   8: "Exporting...",
+  // };
   const [progress, setProgress] = useState(0);
   const handleChange = (e) => {
     const value = parseInt(e.target.value, 10);
@@ -118,25 +118,25 @@ const Compressor = () => {
     setVideoOutputFormat(e.target.value);
   };
 
-  useEffect(() => {
-    if (isCompressing) {
-      let counter = 1;
-      const interval = setInterval(() => {
-        if (counter <= Object.keys(fakeMsg).length) {
-          setCompressing_message(fakeMsg[counter]);
-          var number = 100;
-          var number_array = fakeMsg[counter].match(/\d+/);
-          if (number_array) number = parseInt(number_array[0]);
-          setProgress(number);
-          counter++;
-        } else {
-          clearInterval(interval);
-        }
-      }, 2750);
+  // useEffect(() => {
+  //   if (isCompressing) {
+  //     let counter = 1;
+  //     const interval = setInterval(() => {
+  //       if (counter <= Object.keys(fakeMsg).length) {
+  //         setCompressing_message(fakeMsg[counter]);
+  //         var number = 100;
+  //         var number_array = fakeMsg[counter].match(/\d+/);
+  //         if (number_array) number = parseInt(number_array[0]);
+  //         setProgress(number);
+  //         counter++;
+  //       } else {
+  //         clearInterval(interval);
+  //       }
+  //     }, 2750);
 
-      return () => clearInterval(interval); // Clear interval on unmount or when isCompressing changes
-    }
-  }, [isCompressing]);
+  //     return () => clearInterval(interval); // Clear interval on unmount or when isCompressing changes
+  //   }
+  // }, [isCompressing]);
 
   useEffect(() => {
     const updateLoginStatus = () => {
