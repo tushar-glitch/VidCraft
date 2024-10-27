@@ -40,7 +40,7 @@ const PricingCard = ({
   mergeFiles,
   features,
 }) => (
-  <div className="border p-16 rounded-lg shadow-md text-center">
+  <div className="border p-16 rounded-lg shadow-md text-center transition-transform cursor-pointer duration-300 hover:scale-105 hover:shadow-xl">
     <h3 className="text-3xl font-semibold mb-4">{title}</h3>
     <p className="text-2xl font-bold mb-2 text-blue-600">${price} / Month</p>
     <p className="text-sm text-gray-500 mb-4">(cancel any time)</p>
@@ -76,6 +76,7 @@ const PricingCard = ({
     </ul>
   </div>
 );
+
 
 const Pricing = () => (
   <div className="flex flex-col items-center p-24 ubuntu-light">

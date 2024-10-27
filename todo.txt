@@ -1,0 +1,5 @@
+1 - output format problem
+2 - deployment
+3 - pricing page can be better
+4 - what after clicking a plan on pricing page
+5 - api page
