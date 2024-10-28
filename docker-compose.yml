@@ -1,0 +1,69 @@
+version: '3.8' # Specify the Compose version
+
+services:
+  frontend:
+    build:
+      context: ./video-frontend # Adjust if the Dockerfile is in a subdirectory named `frontend`
+      dockerfile: Dockerfile # Specify if the filename is different, else `Dockerfile` is default
+    ports:
+      - "3000:3000" # Expose and map frontend port if needed
+    # environment:
+    #   - NODE_ENV=development
+    # depends_on:
+    #   - backend # Ensure backend starts before frontend
+
+  backend:
+    build:
+      context: ./video-backend # Adjust based on backend Dockerfile location
+      dockerfile: Dockerfile
+    ports:
+      - "4000:4000" # Expose and map backend port if needed
+    # environment:
+    #   - NODE_ENV=development
+    #   - DATABASE_URL=your_database_url_here # Add backend environment variables as needed
+    # depends_on:
+    #   - database # Ensure database starts before backend
+
+  polling:
+    build:
+      context: ./video-backend/services/polling # Adjust if polling Dockerfile is in a subdirectory named `polling`
+      dockerfile: Dockerfile
+    # environment:
+    #   - AWS_ACCESS_ID=your_aws_access_key
+    #   - AWS_SECRET_KEY=your_aws_secret_key
+    #   - AWS_REGION=your_aws_region
+    #   - SQS_QUEUE_URL=your_sqs_queue_url
+    # depends_on:
+    #   - backend # Optional if polling depends on backend
+
+  compressor:
+    build:
+      context: ./video-backend/services/compressor # Adjust if polling Dockerfile is in a subdirectory named `polling`
+      dockerfile: Dockerfile
+    ports:
+      - "6875:6875" # Expose and map compressor port if needed
+    # environment:
+    #   - AWS_ACCESS_ID=your_aws_access_key
+    #   - AWS_SECRET_KEY=your_aws_secret_key
+    #   - AWS_REGION=your_aws_region
+    #   - SQS_QUEUE_URL=your_sqs_queue_url
+    # depends_on:
+    #   - backend # Optional if polling depends on backend
+  
+  resizer:
+    build:
+      context: ./video-backend/services/resizer # Adjust if polling Dockerfile is in a subdirectory named `polling`
+      dockerfile: Dockerfile
+    ports:
+     - "6876:6876"
+    # environment:
+    #   - AWS_ACCESS_ID=your_aws_access_key
+    #   - AWS_SECRET_KEY=your_aws_secret_key
+    #   - AWS_REGION=your_aws_region
+    #   - SQS_QUEUE_URL=your_sqs_queue_url
+    # depends_on:
+    #   - backend # Optional if polling depends on backend
+
+# Define any persistent volumes here
+# volumes:
+#   db_data:

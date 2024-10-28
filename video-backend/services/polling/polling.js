@@ -3,7 +3,7 @@ const fs = require('fs')
 const path = require('path')
 const { promisify, formatWithOptions } = require('util');
 const writeFileAsync = promisify(fs.writeFile);
-const client = require('../../db/conn')
+const client = require('./db/conn')
 const axios = require('axios')
 require('dotenv').config()
 

@@ -17,8 +17,7 @@ const {exec} = require('child_process')
 ffmpeg.setFfmpegPath(ffmpegPath);
 require('dotenv').config()
 
-const client = require('../../db/conn')
-const { log } = require('util')
+const client = require('./db/conn')
 
 client.connect(function (err) {
     if (err) throw err;
