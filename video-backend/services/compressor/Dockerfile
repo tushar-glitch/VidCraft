@@ -1,6 +1,9 @@
 # Dockerfile for service1
 FROM node:16-alpine
 
+#Install FFmpeg
+RUN apk add --no-cache ffmpeg
+
 # Create and set working directory
 WORKDIR /compressor
 

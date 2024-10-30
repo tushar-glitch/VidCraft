@@ -83,10 +83,12 @@ const processMessage = async (message) => {
 
             // call service here
             if (forward_to_service == 'compressor') {
-                await axios.post(`${process.env.backend_endpoint_compressor}${forward_to_service}`, { bucket, key });
+                // await axios.post(`${process.env.backend_endpoint_compressor}${forward_to_service}`, { bucket, key });
+                await axios.post(`http://compressor:6875/api/v1/compressor`, {bucket, key}) //for docker
             }
             else if (forward_to_service == 'resizer') {
-                await axios.post(`${process.env.backend_endpoint_transcoder}${forward_to_service}`, { bucket, key, })
+                // await axios.post(`${process.env.backend_endpoint_transcoder}${forward_to_service}`, { bucket, key, })
+                await axios.post(`http://resizer:6876/api/v1/resizer`, {bucket, key}) //for docker
             }
             else {
                 console.log('Kya kar raha bhai!!');
