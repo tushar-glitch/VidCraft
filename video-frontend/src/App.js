@@ -10,6 +10,7 @@ import Pricing from './components/Pricing';
 import Footer from './components/Footer';
 import Subscriptions from './components/Subscriptions';
 import Invoices from './components/Invoices';
+import Account from './components/Account';
 
 const App = () => {
   return (
@@ -23,6 +24,7 @@ const App = () => {
         <Route path="/pricing" element={<Pricing/>}/>
         <Route path="/subscriptions" element={<Subscriptions/>}/>
         <Route path="/invoices" element={<Invoices/>}/>
+        <Route path="/account" element={<Account/>}/>
       </Routes>
       <Footer/>
     </Router>

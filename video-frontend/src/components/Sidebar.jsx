@@ -79,7 +79,7 @@ const Sidebar = () => {
         </h2>
         <nav className="space-y-2">
         <a
-            href="#"
+            href="account"
             className="flex items-center px-4 py-2 text-sm font-medium text-gray-800 rounded-lg transition duration-200 ease-in-out transform hover:text-[#2e92ff] hover:scale-105"
           >
             <FiUser className="w-5 h-5 mr-3" />
