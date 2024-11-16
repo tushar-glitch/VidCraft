@@ -27,6 +27,10 @@ const Compressor = () => {
 
   localStorage.setItem("com_counter", 1);
 
+  const deselectFile = () => {
+    setSelectedFile(null);
+  }
+
   const features = [
     {
       name: "Complete Privacy",
@@ -283,7 +287,7 @@ const Compressor = () => {
                   <strong>{selectedFile.name}</strong>
                 </span>
               </div>
-              <FiX className="text-gray-500 cursor-pointer" size={20} />
+              <FiX className="text-gray-500 cursor-pointer" size={20} onClick={deselectFile}/>
             </div>
 
             {/* Size Info */}

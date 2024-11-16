@@ -5,7 +5,7 @@ const Invoices = () => {
   return (
     <div>
       <Sidebar />
-      <div className="pl-60 ubuntu-light">
+      <div className="ubuntu-light">
         <div className="flex justify-center min-h-screen bg-gray-100">
           <div
             style={{ width: "68rem" }}

@@ -1,11 +1,16 @@
 import React from "react";
 import Sidebar from "./Sidebar";
+import { useNavigate } from "react-router-dom";
 
 const Subscriptions = () => {
+  const navigate = useNavigate();
+  const sendToPricePage = () => {
+    navigate('/pricing')
+  }
   return (
     <div>
       <Sidebar />
-      <div className="pl-60 ubuntu-light">
+      <div className="ubuntu-light">
         <div className="flex justify-center min-h-screen bg-gray-100">
           <div
             style={{ width: "68rem" }}
@@ -54,7 +59,7 @@ const Subscriptions = () => {
                       19/20
                     </td>
                     <td className="py-3 px-4 text-sm border-b">
-                      <button className="bg-[#2e92ff] text-white rounded-lg px-4 py-1.5 text-sm hover:bg-blue-600 transition">
+                      <button className="bg-[#2e92ff] text-white rounded-lg px-4 py-1.5 text-sm hover:bg-blue-600 transition" onClick={sendToPricePage}>
                         Upgrade
                       </button>
                     </td>

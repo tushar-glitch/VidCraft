@@ -5,6 +5,8 @@ import SignUp from "./SignUp";
 import axios from "axios";
 import userProfile from "../assets/user-profile.jpg";
 import customArrow from "../assets/down-arrow-profile.png";
+import { useNavigate } from "react-router-dom";
+
 
 const backend_endpoint = process.env.REACT_APP_BACKEND_URL;
 
@@ -16,9 +18,15 @@ const Navbar = () => {
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
+  const navigate = useNavigate();
+
   const toggleDropdown = () => {
     setIsDropdownOpen(!isDropdownOpen);
   };
+
+  const navigateToDashboard = () => {
+    navigate("/account");
+  }
 
   const openModalSignin = (e) => {
     e.stopPropagation();
@@ -110,9 +118,9 @@ const Navbar = () => {
                     <ul className="flex flex-col">
                       <li
                         className="px-4 py-2 text-gray-700 hover:bg-blue-100 cursor-pointer"
-                        // onClick={() => navigateToDashboard()}
+                        onClick={() => navigateToDashboard()}
                       >
-                        Dashboard
+                        Account
                       </li>
                       <li
                         className="px-4 py-2 text-red-700 hover:bg-red-100 cursor-pointer"

@@ -5,7 +5,7 @@ const Account = () => {
   return (
     <div>
       <Sidebar />
-      <div className="pl-60 ubuntu-light">
+      <div className="ubuntu-light">
         <div className="flex flex-col items-center min-h-screen bg-gray-100 space-y-6 pb-6">
           {/* First Card */}
           <div
