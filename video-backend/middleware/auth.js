@@ -39,12 +39,15 @@ const auth = (req, res, next) => {
       //Now no api token present so check for json token
 
       const { token } = req.cookies
+      console.log(token);
+      
       if (token) {
         const verifyToken = jwt.verify(token, process.env.JWT_SECRET);
         if (!verifyToken) {
           return res.status(401).send("Token error");
         }
         req.id = verifyToken.id;
+        
         req.max_video_size = 100/1024
       }
       if(!req.max_video_size) req.max_video_size = 50/1024

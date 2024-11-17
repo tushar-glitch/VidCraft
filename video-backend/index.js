@@ -21,7 +21,7 @@ app.use(cors({
 
 client.connect(function (err) {
   if (err) throw err;
-  client.query("select column_name from information_schema.columns where table_name = 'users'", [], function (err, result) {
+  client.query("select * from tasks", [], function (err, result) {
     if (err) throw err;
 
     console.log(result.rows);
@@ -44,7 +44,7 @@ app.use('/api/v1/plan', premiumRouter)
 // })
 
 // Check status of the video
-app.get('/api/v1/status', async (req, res) => {
+app.get('/api/v1/status', auth, async (req, res) => {
   const { video_id } = req.query
   if (video_id) {
     const result = await client.query('SELECT * FROM video WHERE file_key_name = $1', [video_id])
@@ -58,6 +58,7 @@ app.get('/api/v1/status', async (req, res) => {
       }
       else {
         const { url, output_video_size, output_video_unit } = result.rows[0]
+        await client.query('insert into tasks (user_id, operation, status, download_link) values ($1, $2, $3, $4)', [req.id, 1, 'completed', url]);
         return res.status(200).json({ status, url, size: output_video_size, unit: output_video_unit})
       }
     }

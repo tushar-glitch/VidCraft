@@ -131,6 +131,7 @@ app.post('/api/v1/compressor/healthcheck', async (req, res) => {
 })
 
 app.post('/api/v1/compressor', async (req, res) => {
+    
     const { bucket, key } = req.body;
     const download_params = {
         Bucket: bucket,
@@ -158,10 +159,10 @@ app.post('/api/v1/compressor', async (req, res) => {
         await writeFileAsync(downloadPath, data.Body);
         await compressVideo(downloadPath, outputPath, compression_ratio)
         // await axios.post(`${process.env.backend_endpoint}changestatus`, { video_id: key, status: 2 });
-        await axios.post(`http://backend:4000/api/v1/changestatus`, {video_id: key, status:2})
+        await axios.post(`http://localhost:4000/api/v1/changestatus`, {video_id: key, status:2})
         await uploadToS3(res, outputPath, key, output_video_format)
         // await axios.post(`${process.env.backend_endpoint}changestatus`, { video_id: key, status: 3 });
-        await axios.post(`http://backend:4000/api/v1/changestatus`, {video_id: key, status:3})
+        await axios.post(`http://localhost:4000/api/v1/changestatus`, {video_id: key, status:3})
     }
     catch (err) {
         console.log(err);

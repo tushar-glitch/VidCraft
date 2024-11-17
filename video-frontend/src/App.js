@@ -11,6 +11,7 @@ import Subscriptions from './components/Subscriptions';
 import Invoices from './components/Invoices';
 import Account from './components/Account';
 import Sidebar from './components/Sidebar';
+import Tasks from './components/Tasks';
 
 const AppLayout = ({ children }) => {
   const location = useLocation();
@@ -45,6 +46,7 @@ const App = () => {
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/subscriptions" element={<Subscriptions />} />
           <Route path="/invoices" element={<Invoices />} />
+          <Route path="/tasks" element={<Tasks />} />
           <Route path="/account" element={<Account />} />
         </Routes>
       </AppLayout>
