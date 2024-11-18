@@ -52,7 +52,7 @@ const Sidebar = () => {
             Tasks
           </a> */}
           <a
-            href="#"
+            href="/tasks"
             className="flex items-center px-4 py-2 text-sm font-medium text-gray-800 rounded-lg transition duration-200 ease-in-out transform hover:text-[#2e92ff] hover:scale-105"
           >
             <FiClipboard className="w-5 h-5 mr-3" />

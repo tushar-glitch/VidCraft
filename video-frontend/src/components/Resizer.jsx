@@ -89,7 +89,8 @@ const Compressor = () => {
     let status = 0;
     while (status !== 3) {
       const res = await axios.get(
-        `http://localhost:4000/api/v1/status?video_id=${file_key}`
+        `http://localhost:4000/api/v1/status?video_id=${file_key}`,
+        {withCredentials: true}
       );
       status = res.data.status;
       if (status === 3) {

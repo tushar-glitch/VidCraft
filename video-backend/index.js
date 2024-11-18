@@ -8,6 +8,7 @@ const videoRouter = require('./routes/videoRouter')
 const authRouter = require('./routes/authRouter')
 const thumbnailRouter = require('./routes/thumbnailRouter')
 const premiumRouter = require('./routes/premiumRouter')
+const accountRouter = require('./routes/accountRouter')
 const cookieParser = require('cookie-parser');
 const cors = require('cors')
 const auth = require('./middleware/auth')
@@ -21,7 +22,7 @@ app.use(cors({
 
 client.connect(function (err) {
   if (err) throw err;
-  client.query("select * from tasks", [], function (err, result) {
+  client.query("", [], function (err, result) {
     if (err) throw err;
 
     console.log(result.rows);
@@ -36,6 +37,7 @@ app.use('/api/v1/video', videoRouter)
 app.use('/api/v1/auth', authRouter)
 app.use('/api/v1/thumbnail', thumbnailRouter)
 app.use('/api/v1/plan', premiumRouter)
+app.use('/api/v1/account', accountRouter)
 
 //Dummy api
 // app.get('/api/v1/hello', (req, res, next) => {

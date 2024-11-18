@@ -39,8 +39,6 @@ const auth = (req, res, next) => {
       //Now no api token present so check for json token
 
       const { token } = req.cookies
-      console.log(token);
-      
       if (token) {
         const verifyToken = jwt.verify(token, process.env.JWT_SECRET);
         if (!verifyToken) {
