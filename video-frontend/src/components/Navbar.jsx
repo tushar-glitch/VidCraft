@@ -50,7 +50,9 @@ const Navbar = () => {
           setLoggedIn(true);
           sessionStorage.setItem("isSignedIn", true);
         } else {
-          setLoggedIn(false);
+          //Later chnage this line
+          setLoggedIn(true);
+          // setLoggedIn(false);
           sessionStorage.removeItem("isSignedIn");
         }
       })

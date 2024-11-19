@@ -12,7 +12,7 @@ const TaskCard = () => {
     const fetchTasks = async () => {
       try {
         const response = await axios.get(
-          `${backend_endpoint}account/getalltasks`,
+          `${backend_endpoint}api/v1/account/getalltasks`,
           {
             withCredentials: true,
           }
