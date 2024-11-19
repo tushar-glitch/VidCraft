@@ -141,4 +141,4 @@ const pollQueue = () => {
 };
 
 // Poll the queue at regular intervals
-setInterval(pollQueue, 2000); 
+setInterval(pollQueue, 10000); 
