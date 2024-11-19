@@ -85,7 +85,7 @@ const Compressor = () => {
     let status = 0;
     while (status !== 3) {
       const res = await axios.get(
-        `http://localhost:4000/api/v1/status?video_id=${file_key}`, {withCredentials: true}
+        `${process.env.REACT_APP_BACKEND_URL}/api/v1/status?video_id=${file_key}`, {withCredentials: true}
       );
       status = res.data.status;
       if (status === 3) {
@@ -215,7 +215,7 @@ const Compressor = () => {
 
       try {
         const result = await axios.post(
-          "http://localhost:4000/api/v1/video/upload",
+          `${process.env.REACT_APP_BACKEND_URL}api/v1/video/upload`,
           formData,
           { withCredentials: true }
         );
