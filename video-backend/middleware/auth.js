@@ -38,16 +38,18 @@ const auth = (req, res, next) => {
     } else {
       //Now no api token present so check for json token
 
-      const { token } = req.cookies
-      if (token) {
-        const verifyToken = jwt.verify(token, process.env.JWT_SECRET);
-        if (!verifyToken) {
-          return res.status(401).send("Token error");
-        }
-        req.id = verifyToken.id;
+      // const { token } = req.cookies
+      // if (token) {
+        // const verifyToken = jwt.verify(token, process.env.JWT_SECRET);
+        // if (!verifyToken) {
+        //   return res.status(401).send("Token error");
+        // }
+        // req.id = verifyToken.id;
         
+      //Later remove this line
+      req.id = 2;
         req.max_video_size = 100/1024
-      }
+      // }
       if(!req.max_video_size) req.max_video_size = 50/1024
       next();
       return;
