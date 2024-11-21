@@ -5,6 +5,7 @@ const { promisify, formatWithOptions } = require('util');
 const writeFileAsync = promisify(fs.writeFile);
 const client = require('./db/conn')
 const axios = require('axios')
+const http = require('http');
 require('dotenv').config()
 
 client.connect(function (err) {
@@ -141,4 +142,15 @@ const pollQueue = () => {
 };
 
 // Poll the queue at regular intervals
-setInterval(pollQueue, 2000); 
+setInterval(pollQueue, 10000); 
+
+const PORT = process.env.PORT || 5500;
+
+const server = http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('Polling worker is running.\n');
+});
+
+server.listen(PORT, () => {
+    console.log(`HTTP server listening on port ${PORT}`);
+});

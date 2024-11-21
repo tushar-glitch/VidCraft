@@ -155,7 +155,7 @@ app.post('/api/v1/resizer', async (req, res) => {
     })
 
     try {
-        const data = await s3.getObject(download_params).promise();
+       const data = await s3.getObject(download_params).promise();
         const downloadPath = path.join(__dirname, `downloads/${key}.mp4`);
         const outputPath = path.join(__dirname, `outputs/${key}.mp4`)
         await writeFileAsync(downloadPath, data.Body);

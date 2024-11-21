@@ -42,7 +42,7 @@ const Navbar = () => {
 
   useEffect(() => {
     axios
-      .get(`${backend_endpoint}auth/check-login-status`, {
+      .get(`${backend_endpoint}api/v1/auth/check-login-status`, {
         withCredentials: true,
       })
       .then((res) => {

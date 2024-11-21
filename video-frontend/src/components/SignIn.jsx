@@ -40,7 +40,7 @@ const SignIn = ({ isOpen, onClose, setLoggedIn }) => {
     if (emailorusername && password) {
       axios
         .post(
-          `${backend_endpoint}auth/login`,
+          `${backend_endpoint}api/v1/auth/login`,
           {
             username_or_email: emailorusername,
             password: password,
