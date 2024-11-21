@@ -107,14 +107,15 @@ const Compressor = () => {
   };
 
   const fakeMsg = {
-    1: "Uploading 45%",
-    2: "Uploading 91%",
-    3: "Resizing 12%",
-    4: "Resizing 45%",
-    5: "Resizing 78%",
-    6: "Resizing 98%",
-    7: "Resizing 100%",
-    8: "Exporting...",
+    1: `Uploading ${Math.floor(Math.random() * (30 - 11 + 1)) + 11}%`,
+    2: `Uploading ${Math.floor(Math.random() * (87 - 47 + 1)) + 47}%`,
+    3: `Uploading ${Math.floor(Math.random() * (99 - 91 + 1)) + 91}%`,
+    4: `Resizing ${Math.floor(Math.random() * (30 - 11 + 1)) + 11}%`,
+    5: `Resizing ${Math.floor(Math.random() * (61 - 47 + 1)) + 47}%`,
+    6: `Resizing ${Math.floor(Math.random() * (88 - 67 + 1)) + 67}%`,
+    7: `Resizing ${Math.floor(Math.random() * (99 - 91 + 1)) + 91}%`,
+    8: "Resizing 100%",
+    9: "Exporting...",
   };
   const [progress, setProgress] = useState(0);
   const handleChange = (e) => {
@@ -138,7 +139,7 @@ const Compressor = () => {
         } else {
           clearInterval(interval);
         }
-      }, 2750);
+      }, 2250);
 
       return () => clearInterval(interval); // Clear interval on unmount or when isCompressing changes
     }
@@ -272,7 +273,7 @@ const Compressor = () => {
             {downloadUrl ? (
               <>
                 <p className="mt-1 text-green-400 font-semibold border border-green-400 w-30">
-                  Saved 95%🥳
+                  Video reduced!🥳
                 </p>
                 <a
                   href={downloadUrl}

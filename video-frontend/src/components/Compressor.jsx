@@ -101,16 +101,17 @@ const Compressor = () => {
     }
   };
 
-  // const fakeMsg = {
-  //   1: "Uploading 45%",
-  //   2: "Uploading 91%",
-  //   3: "Compressing 12%",
-  //   4: "Compressing 45%",
-  //   5: "Compressing 78%",
-  //   6: "Compressing 98%",
-  //   7: "Compressing 100%",
-  //   8: "Exporting...",
-  // };
+  const fakeMsg = {
+    1: `Uploading ${Math.floor(Math.random() * (30 - 11 + 1)) + 11}%`,
+    2: `Uploading ${Math.floor(Math.random() * (87 - 47 + 1)) + 47}%`,
+    3: `Uploading ${Math.floor(Math.random() * (99 - 91 + 1)) + 91}%`,
+    4: `Compressing ${Math.floor(Math.random() * (30 - 11 + 1)) + 11}%`,
+    5: `Compressing ${Math.floor(Math.random() * (61 - 47 + 1)) + 47}%`,
+    6: `Compressing ${Math.floor(Math.random() * (88 - 67 + 1)) + 67}%`,
+    7: `Compressing ${Math.floor(Math.random() * (99 - 91 + 1)) + 91}%`,
+    8: "Compressing 100%",
+    9: "Exporting...",
+  };
   const [progress, setProgress] = useState(0);
   const handleChange = (e) => {
     const value = parseInt(e.target.value, 10);
@@ -122,25 +123,25 @@ const Compressor = () => {
     setVideoOutputFormat(e.target.value);
   };
 
-  // useEffect(() => {
-  //   if (isCompressing) {
-  //     let counter = 1;
-  //     const interval = setInterval(() => {
-  //       if (counter <= Object.keys(fakeMsg).length) {
-  //         setCompressing_message(fakeMsg[counter]);
-  //         var number = 100;
-  //         var number_array = fakeMsg[counter].match(/\d+/);
-  //         if (number_array) number = parseInt(number_array[0]);
-  //         setProgress(number);
-  //         counter++;
-  //       } else {
-  //         clearInterval(interval);
-  //       }
-  //     }, 2750);
+  useEffect(() => {
+    if (isCompressing) {
+      let counter = 1;
+      const interval = setInterval(() => {
+        if (counter <= Object.keys(fakeMsg).length) {
+          setCompressing_message(fakeMsg[counter]);
+          var number = 100;
+          var number_array = fakeMsg[counter].match(/\d+/);
+          if (number_array) number = parseInt(number_array[0]);
+          setProgress(number);
+          counter++;
+        } else {
+          clearInterval(interval);
+        }
+      }, 2250);
 
-  //     return () => clearInterval(interval); // Clear interval on unmount or when isCompressing changes
-  //   }
-  // }, [isCompressing]);
+      return () => clearInterval(interval); // Clear interval on unmount or when isCompressing changes
+    }
+  }, [isCompressing]);
 
   useEffect(() => {
     const updateLoginStatus = () => {
@@ -329,7 +330,7 @@ const Compressor = () => {
             {downloadUrl ? (
               <>
                 <p className="mt-1 text-green-400 font-semibold border border-green-400 w-30">
-                  Saved 95%🥳
+                    Saved {100 - compressionRatio}%🥳
                 </p>
                 <a
                   href={downloadUrl}
