@@ -52,6 +52,7 @@ const SignIn = ({ isOpen, onClose, setLoggedIn }) => {
         .then((res) => {
           setLoggedIn(true);
           sessionStorage.setItem("isSignedIn", true)
+          sessionStorage.setItem("email", res.data.user.email)
           window.dispatchEvent(new Event('loginStatusChanged'));
           onClose();
         })

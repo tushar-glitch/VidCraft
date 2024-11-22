@@ -17,13 +17,13 @@ const Account = () => {
             <div className="mb-4 flex items-center">
               <label className="font-medium mr-52">Email:</label>
               <span className="text-gray-600 text-sm">
-                dummyemail@example.com
+                {sessionStorage.getItem("email") || "Error occured while fetching email"}
               </span>
             </div>
             <hr className="mb-4" />
             <div className="mb-4 flex items-center">
               <label className="font-medium mr-44">Password:</label>
-              <span className="text-[#2e92ff] text-sm">Change Password</span>
+              <span className="text-[#2e92ff] text-sm cursor-pointer">Change Password</span>
             </div>
           </div>
 
