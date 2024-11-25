@@ -39,11 +39,10 @@ app.use('/api/v1/thumbnail', thumbnailRouter)
 app.use('/api/v1/plan', premiumRouter)
 app.use('/api/v1/account', accountRouter)
 
-//Dummy api
-// app.get('/api/v1/hello', (req, res, next) => {
-//   auth(req, res, next)
-//   res.status(200).json({ message: 'Hello World!' })
-// })
+// Health check api
+app.get('/api/v1/healthcheck', (req, res) => {
+  res.status(200).json({ message: 'Server healthy!' })
+})
 
 // Check status of the video
 app.get('/api/v1/status', auth, async (req, res) => {
