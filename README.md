@@ -24,6 +24,7 @@ npm run migrate
 
 npm run dev:api      # http://localhost:4000
 npm run dev:worker
+npm run dev:web      # http://localhost:5173 (proxies /api to the API)
 ```
 
 Local infrastructure: Postgres on port 5442, S3-compatible storage (SeaweedFS) on port 8333.

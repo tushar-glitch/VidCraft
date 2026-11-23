@@ -1,7 +1,7 @@
 import { Router, type CookieOptions, type Response } from 'express';
 import { loginSchema, registerSchema } from '@vidcraft/shared';
-import { HttpError, parse } from '../../http/errors.ts';
-import { requireUser, SESSION_COOKIE } from './auth.middleware.ts';
+import { parse } from '../../http/errors.ts';
+import { SESSION_COOKIE } from './auth.middleware.ts';
 import { SESSION_TTL_SECONDS, toUserDto, type AuthService } from './auth.service.ts';
 
 export function authRoutes(auth: AuthService, secureCookies: boolean): Router {
@@ -33,10 +33,10 @@ export function authRoutes(auth: AuthService, secureCookies: boolean): Router {
     res.status(204).end();
   });
 
-  router.get('/me', requireUser, async (req, res) => {
-    const user = await auth.getUser(req.userId!);
-    if (!user) throw new HttpError(401, 'unauthenticated', 'Please sign in');
-    res.json({ user: toUserDto(user) });
+  // "Who am I?" Signed-out is a normal answer here, not an error.
+  router.get('/me', async (req, res) => {
+    const user = req.userId ? await auth.getUser(req.userId) : null;
+    res.json({ user: user ? toUserDto(user) : null });
   });
 
   return router;
