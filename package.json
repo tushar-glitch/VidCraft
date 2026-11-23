@@ -1,0 +1,23 @@
+{
+  "name": "vidcraft",
+  "private": true,
+  "type": "module",
+  "workspaces": ["packages/*", "apps/*"],
+  "engines": { "node": ">=22.12" },
+  "scripts": {
+    "infra:up": "docker compose up -d",
+    "infra:down": "docker compose down",
+    "migrate": "node --env-file-if-exists=.env node_modules/node-pg-migrate/bin/node-pg-migrate.js up -m db/migrations --migration-file-language sql",
+    "dev:api": "npm run dev -w @vidcraft/api",
+    "dev:worker": "npm run dev -w @vidcraft/worker",
+    "dev:web": "npm run dev -w @vidcraft/web",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm test --workspaces --if-present"
+  },
+  "devDependencies": {
+    "node-pg-migrate": "^9.0.0",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "@types/node": "^24.0.0"
+  }
+}
