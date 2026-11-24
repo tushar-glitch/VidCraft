@@ -1,7 +1,9 @@
 /// <reference path="./hls-light.d.ts" />
 import Hls from 'hls.js/light';
 import type { BandwidthStore } from './bandwidth.ts';
-import type { FeedItem } from './types.ts';
+import { startupBreakdown, type LoadMarks } from './breakdown.ts';
+import { newId } from './telemetry.ts';
+import type { FeedItem, StartupBreakdown } from './types.ts';
 
 /** `preload` loads just enough to start instantly; `active` buffers ahead for smooth playback. */
 export type SlotMode = 'active' | 'preload';
@@ -10,9 +12,18 @@ export type SlotMode = 'active' | 'preload';
 const BUFFER_SECONDS: Record<SlotMode, number> = { active: 20, preload: 4 };
 const HAVE_FUTURE_DATA = 3;
 
+export interface FirstFrameInfo {
+  startupMs: number;
+  preloaded: boolean;
+  quality: number | null;
+  bandwidthKbps: number | null;
+  breakdown: StartupBreakdown;
+  fragmentBytes: number | null;
+}
+
 /** What a slot reports back to the feed. */
 export interface SlotHost {
-  firstFrame(slot: Slot, startupMs: number, preloaded: boolean, quality: number | null): void;
+  firstFrame(slot: Slot, info: FirstFrameInfo): void;
   rebuffer(slot: Slot, durationMs: number): void;
   qualityChange(slot: Slot, from: number | null, to: number): void;
   error(slot: Slot, message: string): void;
@@ -37,8 +48,12 @@ export class Slot {
   index = -1;
   /** The viewer tapped pause; don't auto-resume when the tab becomes visible again. */
   userPaused = false;
+  /** Identifies the current play of this video; every event about it carries this id. */
+  viewId = '';
 
   private hls: Hls | null = null;
+  private viewOpen = false;
+  private marks: LoadMarks = { assignedAt: 0 };
   private mode: SlotMode = 'preload';
   private activatedAt = 0;
   private preloaded = false;
@@ -82,6 +97,7 @@ export class Slot {
     this.mediaRetries = 0;
     this.userPaused = false;
     this.mode = 'preload';
+    this.marks = { assignedAt: performance.now() };
     slide.insertBefore(this.video, before);
 
     if (Hls.isSupported()) {
@@ -105,6 +121,8 @@ export class Slot {
   activate(now: number): void {
     this.setMode('active');
     this.viewToken++;
+    this.viewId = newId();
+    this.viewOpen = true;
     this.activatedAt = now;
     this.preloaded = this.video.readyState >= HAVE_FUTURE_DATA;
     this.firstFrameDone = false;
@@ -133,8 +151,13 @@ export class Slot {
     this.video.pause();
   }
 
-  /** The viewer is done with this video: return how long they watched, and reset. */
-  finishView(): ViewSummary {
+  /**
+   * The viewer is done with this video: return how long they watched, and reset.
+   * Returns null if the view was already finished, so a view is never reported twice.
+   */
+  finishView(): ViewSummary | null {
+    if (!this.viewOpen) return null;
+    this.viewOpen = false;
     this.accumulateWatchTime();
     const summary = { watchTimeMs: Math.round(this.watchMs), completed: this.completed };
     this.viewToken++;
@@ -185,6 +208,14 @@ export class Slot {
       lowLatencyMode: false,
     });
     hls.on(Hls.Events.FRAG_BUFFERED, () => this.bandwidth.update(hls.bandwidthEstimate));
+    // Remember when each loading stage finished (first occurrence only), to explain a slow start later.
+    hls.on(Hls.Events.MANIFEST_LOADED, () => (this.marks.manifestAt ??= performance.now()));
+    hls.on(Hls.Events.LEVEL_LOADED, () => (this.marks.levelAt ??= performance.now()));
+    hls.on(Hls.Events.FRAG_LOADED, (_e, data) => {
+      if (this.marks.fragAt !== undefined) return;
+      this.marks.fragAt = performance.now();
+      this.marks.fragBytes = data.frag.stats.total;
+    });
     hls.on(Hls.Events.LEVEL_SWITCHED, (_e, data) => {
       const level = hls.levels[data.level];
       const height = level ? Math.min(level.width, level.height) : 0; // vertical video is named by its width, like "720p"
@@ -217,7 +248,19 @@ export class Slot {
     const done = () => {
       if (token !== this.viewToken || this.firstFrameDone) return;
       this.firstFrameDone = true;
-      this.host.firstFrame(this, performance.now() - this.activatedAt, this.preloaded, this.quality);
+      const frameAt = performance.now();
+      // The player's estimate is only a measurement once something has been downloaded; before that it's our guess.
+      const estimate = this.hls?.bandwidthEstimate;
+      this.host.firstFrame(this, {
+        startupMs: frameAt - this.activatedAt,
+        preloaded: this.preloaded,
+        // What is actually on screen. hls.js announces a level switch only after the first chunk is buffered,
+        // which on a slow cold start is later than the first frame, so the picture's own size is the reliable source.
+        quality: this.video.videoWidth > 0 ? Math.min(this.video.videoWidth, this.video.videoHeight) : this.quality,
+        bandwidthKbps: this.marks.fragAt !== undefined && estimate && Number.isFinite(estimate) ? Math.round(estimate / 1000) : null,
+        breakdown: startupBreakdown(this.marks, this.activatedAt, frameAt),
+        fragmentBytes: this.marks.fragBytes ?? null,
+      });
     };
     // Older browsers (and Firefox before 132) lack requestVideoFrameCallback; "playing" is a close stand-in.
     if (typeof this.video.requestVideoFrameCallback === 'function') this.video.requestVideoFrameCallback(done);

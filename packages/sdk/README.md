@@ -30,6 +30,14 @@ The container needs a height. The feed styles itself (every class is prefixed `v
 - **Good citizen.** Pauses when the tab is hidden or the feed scrolls out of view; falls back to muted
   playback if the browser refuses sound; uses Safari's built-in HLS where hls.js isn't supported.
 
+## Telemetry
+
+When `apiUrl` is set, the SDK reports playback events to `${apiUrl}/events` in batches (every 5 seconds, or at
+20 events, and when the page is hidden or closed). Pass `telemetry: false` to turn it off, or `telemetry: { url }` to
+send elsewhere. It sends a random per-tab session id, the device type (touch or desktop), the browser's connection
+class when it offers one, and the events below. Nothing that identifies a person. Failed sends are retried, and a
+backlog is capped at the newest 200 events, so a down server can never grow memory or slow playback.
+
 ## Events
 
 `firstFrame.startupMs` is measured from the video becoming current to the first new frame being

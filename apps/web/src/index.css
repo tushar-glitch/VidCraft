@@ -9,3 +9,35 @@
 body {
   @apply bg-white font-light text-gray-800 antialiased;
 }
+
+/*
+ * Chart colours, as roles. Values come from the validated data-viz palette (light and dark steps).
+ * Dark values apply only under an explicit data-theme="dark": the rest of the app has no dark theme
+ * yet, and a chart that went dark inside a white page would be unreadable.
+ */
+.viz-root {
+  --viz-surface: #fcfcfb;
+  --viz-ink: #0b0b0b;
+  --viz-ink-2: #52514e;
+  --viz-muted: #898781;
+  --viz-grid: #e1e0d9;
+  --viz-axis: #c3c2b7;
+  --viz-border: rgba(11, 11, 11, 0.1);
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+}
+:root[data-theme="dark"] .viz-root {
+  --viz-surface: #1a1a19;
+  --viz-ink: #f0efec;
+  --viz-ink-2: #c3c2b7;
+  --viz-muted: #898781;
+  --viz-grid: #2c2c2a;
+  --viz-axis: #383835;
+  --viz-border: rgba(255, 255, 255, 0.1);
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
+}

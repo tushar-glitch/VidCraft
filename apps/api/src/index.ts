@@ -14,6 +14,8 @@ import { loadApiConfig } from './config.ts';
 import type { Enqueue } from './db.ts';
 import { AuthService } from './modules/auth/auth.service.ts';
 import { UsersRepository } from './modules/auth/users.repository.ts';
+import { AnalyticsRepository } from './modules/analytics/analytics.repository.ts';
+import { AnalyticsService } from './modules/analytics/analytics.service.ts';
 import { FeedService } from './modules/feed/feed.service.ts';
 import { JobsService } from './modules/jobs/jobs.service.ts';
 import { VideosService } from './modules/videos/videos.service.ts';
@@ -35,6 +37,8 @@ const mediaUrl = mediaUrlFor(config);
 const videoRepo = new VideosRepository(pool);
 const videos = new VideosService(pool, videoRepo, storage, createMediaStorage(config), mediaUrl, enqueue);
 const feed = new FeedService(videoRepo, mediaUrl);
+const analyticsRepo = new AnalyticsRepository(pool);
+const analytics = new AnalyticsService(analyticsRepo);
 
 const app = createApp({
   logger,
@@ -44,6 +48,8 @@ const app = createApp({
   jobs,
   videos,
   feed,
+  analytics,
+  analyticsRepo,
   checkHealth: async () => {
     await pool.query('select 1');
   },

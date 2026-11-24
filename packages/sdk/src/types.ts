@@ -15,8 +15,33 @@ export interface FeedPage {
   nextCursor: string | null;
 }
 
-/** Everything the SDK reports. Each event also carries `t`, the time it happened (ms since epoch). */
-export type FeedEvent = { t: number } & (
+/** What is known about the viewer's environment when reporting. Nothing here identifies a person. */
+export interface TelemetryContext {
+  /** Random per browser tab session. */
+  sessionId: string;
+  /** Browser-reported connection class ("4g", "3g"…), when it offers one. */
+  network: string | null;
+  device: 'touch' | 'desktop';
+  sdk: string;
+}
+
+/** Where the time to first frame went. The four parts add up to `startupMs`. */
+export interface StartupBreakdown {
+  /** Fetching the master playlist (the list of qualities). */
+  manifestMs: number;
+  /** Fetching the playlist for the chosen quality. */
+  levelMs: number;
+  /** Downloading the first piece of video. */
+  fragmentMs: number;
+  /** Decoding it and getting the first picture on screen. */
+  renderMs: number;
+}
+
+/**
+ * Everything the SDK reports. Each event carries `t` (when it happened, ms since epoch) and `viewId`,
+ * which ties together all the events of one play of one video. This is also the shape sent to the server.
+ */
+export type FeedEvent = { t: number; viewId: string } & (
   | { type: 'impression'; itemId: string; index: number }
   | {
       type: 'firstFrame';
@@ -32,6 +57,11 @@ export type FeedEvent = { t: number } & (
       preloaded: boolean;
       /** Shorter side in pixels of the quality that started playing, e.g. 720 for 720p. */
       quality: number | null;
+      /** The player's bandwidth estimate when playback started, in kbit/s. */
+      bandwidthKbps: number | null;
+      breakdown: StartupBreakdown;
+      /** Size of the first piece of video, in bytes. */
+      fragmentBytes: number | null;
     }
   | { type: 'rebuffer'; itemId: string; durationMs: number }
   | { type: 'qualityChange'; itemId: string; from: number | null; to: number }
@@ -52,6 +82,12 @@ export interface FeedOptions {
   startMuted?: boolean;
   /** Replay a video when it ends. Default true. */
   loop?: boolean;
+  /**
+   * Send playback events (start-up time, stalls, quality, watch time) to the VidCraft server so they
+   * show up in the dashboard. On by default when `apiUrl` is set; pass `false` to turn it off.
+   * Events carry a random per-tab session id and no personal data.
+   */
+  telemetry?: false | { url?: string };
   onEvent?: (event: FeedEvent) => void;
 }
 

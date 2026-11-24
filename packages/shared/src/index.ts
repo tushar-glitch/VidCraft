@@ -171,6 +171,138 @@ export const feedQuerySchema = z.object({
   cursor: z.string().max(200).optional(),
 });
 
+// ---- Playback analytics: what the SDK reports and the API accepts ----
+
+const ms = (max: number) => z.number().int().min(0).max(max);
+const eventBase = {
+  itemId: z.uuid(),
+  /** One play of one video: from it becoming current to the viewer leaving it. */
+  viewId: z.string().min(8).max(64),
+  /** When it happened on the viewer's device, in ms since the epoch. */
+  t: z.number().int().positive(),
+};
+
+/** Where the time to first frame went. The four parts add up to `startupMs`. */
+export const startupBreakdownSchema = z.object({
+  /** Fetching the master playlist (the list of qualities). */
+  manifestMs: ms(120_000),
+  /** Fetching the playlist for the chosen quality. */
+  levelMs: ms(120_000),
+  /** Downloading the first piece of video. */
+  fragmentMs: ms(120_000),
+  /** Decoding it and getting the first picture on screen. */
+  renderMs: ms(120_000),
+});
+export type StartupBreakdown = z.infer<typeof startupBreakdownSchema>;
+
+export const playbackEventSchema = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('impression'), ...eventBase, index: ms(1_000_000) }),
+  z.object({
+    type: z.literal('firstFrame'),
+    ...eventBase,
+    index: ms(1_000_000),
+    startupMs: ms(120_000),
+    preloaded: z.boolean(),
+    /** Shorter side in pixels of the quality that started, e.g. 720 for 720p. */
+    quality: ms(8000).nullable(),
+    /** The player's bandwidth estimate when it started, in kbit/s. */
+    bandwidthKbps: ms(1_000_000).nullable(),
+    breakdown: startupBreakdownSchema,
+    /** Size of the first piece of video, in bytes. */
+    fragmentBytes: ms(1_000_000_000).nullable(),
+  }),
+  z.object({ type: z.literal('rebuffer'), ...eventBase, durationMs: ms(600_000) }),
+  z.object({ type: z.literal('qualityChange'), ...eventBase, from: ms(8000).nullable(), to: ms(8000) }),
+  z.object({ type: z.literal('viewEnd'), ...eventBase, index: ms(1_000_000), watchTimeMs: ms(86_400_000), completed: z.boolean() }),
+  z.object({ type: z.literal('error'), ...eventBase, message: z.string().max(200) }),
+]);
+export type PlaybackEvent = z.infer<typeof playbackEventSchema>;
+
+export const playbackContextSchema = z.object({
+  /** Random per browser tab session. Not tied to a person. */
+  sessionId: z.string().min(8).max(64),
+  /** Browser-reported connection class ("4g", "3g"…), when it offers one. */
+  network: z.string().max(16).nullable(),
+  device: z.enum(['touch', 'desktop']),
+  sdk: z.string().max(20),
+});
+export type PlaybackContext = z.infer<typeof playbackContextSchema>;
+
+/** Events are validated one by one on the server, so one bad event doesn't discard the batch. */
+export const playbackBatchSchema = z.object({
+  context: playbackContextSchema,
+  events: z.array(z.unknown()).max(100),
+});
+
+// ---- Analytics dashboard (owner-only) ----
+
+export const analyticsQuerySchema = z.object({
+  days: z.coerce.number().int().min(1).max(90).default(7),
+  limit: z.coerce.number().int().min(1).max(50).default(10),
+});
+
+export type ConnectionBucket = 'slow' | 'medium' | 'fast' | 'unknown';
+
+/** Groups a measured speed (kbit/s). The API's SQL uses the same thresholds. */
+export function connectionBucket(kbps: number | null): ConnectionBucket {
+  if (kbps === null) return 'unknown';
+  return kbps < 1000 ? 'slow' : kbps < 5000 ? 'medium' : 'fast';
+}
+
+export interface AnalyticsOverviewDto {
+  days: number;
+  /** Times a video became the current one. */
+  views: number;
+  /** Of those, how many reached a first frame. */
+  started: number;
+  watchTimeMs: number;
+  /** Share of finished views that reached 95% of the video; null if none finished yet. */
+  completionRate: number | null;
+  startupP50Ms: number | null;
+  /** The slow tail: 1 view in 20 started slower than this. */
+  startupP95Ms: number | null;
+  /** Share of starts where the video was already loaded in the background. */
+  preloadedShare: number | null;
+  /** Share of started views that stalled at least once. */
+  rebufferRate: number | null;
+  /** Start-up and stalls split by the viewer's measured connection speed. */
+  byConnection: { bucket: ConnectionBucket; views: number; startupP50Ms: number | null; startupP95Ms: number | null; rebufferRate: number | null }[];
+  daily: { day: string; views: number; startupP50Ms: number | null; startupP95Ms: number | null }[];
+}
+
+export interface StartupDto {
+  startupMs: number;
+  preloaded: boolean;
+  quality: number | null;
+  bandwidthKbps: number | null;
+  breakdown: StartupBreakdown;
+  fragmentBytes: number | null;
+}
+
+export interface SlowViewDto extends StartupDto {
+  viewId: string;
+  itemId: string;
+  title: string;
+  at: string;
+  network: string | null;
+  device: 'touch' | 'desktop';
+}
+
+export interface ViewTraceDto {
+  viewId: string;
+  itemId: string;
+  title: string;
+  startedAt: string;
+  network: string | null;
+  device: 'touch' | 'desktop';
+  startup: StartupDto | null;
+  rebuffers: number[];
+  qualityChanges: { from: number | null; to: number }[];
+  errors: string[];
+  watchTimeMs: number | null;
+  completed: boolean | null;
+}
+
 export interface CreateVideoResponse {
   video: VideoDto;
   /** PUT the file here, then call POST /videos/:id/start. */

@@ -11,5 +11,5 @@
     "build": "vite build"
   },
   "dependencies": { "hls.js": "^1.7.4" },
-  "devDependencies": { "vite": "^8.3.8" }
+  "devDependencies": { "@vidcraft/shared": "*", "vite": "^8.3.8" }
 }

@@ -1,4 +1,5 @@
 import type {
+  AnalyticsOverviewDto,
   ApiErrorBody,
   CreateJobRequest,
   CreateJobResponse,
@@ -7,9 +8,11 @@ import type {
   JobDto,
   LoginRequest,
   RegisterRequest,
+  SlowViewDto,
   UpdateVideoRequest,
   UserDto,
   VideoDto,
+  ViewTraceDto,
 } from '@vidcraft/shared';
 
 const BASE = `${import.meta.env.VITE_API_URL ?? ''}/api/v1`;
@@ -58,6 +61,12 @@ export const api = {
   startJob: (id: string) => request<{ job: JobDto }>('POST', `/jobs/${id}/start`).then((r) => r.job),
   getJob: (id: string) => request<{ job: JobDto }>('GET', `/jobs/${id}`).then((r) => r.job),
   listJobs: () => request<{ jobs: JobDto[] }>('GET', '/jobs').then((r) => r.jobs),
+
+  analyticsOverview: (days: number) => request<AnalyticsOverviewDto>('GET', `/analytics/overview?days=${days}`),
+  slowestViews: (days: number, limit = 10) =>
+    request<{ views: SlowViewDto[] }>('GET', `/analytics/slowest?days=${days}&limit=${limit}`).then((r) => r.views),
+  viewTrace: (viewId: string) =>
+    request<{ view: ViewTraceDto }>('GET', `/analytics/views/${encodeURIComponent(viewId)}`).then((r) => r.view),
 
   createVideo: (body: CreateVideoRequest) => request<CreateVideoResponse>('POST', '/videos', body),
   startVideo: (id: string) => request<{ video: VideoDto }>('POST', `/videos/${id}/start`).then((r) => r.video),

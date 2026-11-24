@@ -1,9 +1,10 @@
-import { FiClipboard, FiFilm, FiUser } from 'react-icons/fi';
+import { FiBarChart2, FiClipboard, FiFilm, FiUser } from 'react-icons/fi';
 import { Navigate, NavLink, Outlet } from 'react-router';
 import { useAuth } from '../../auth/AuthContext.tsx';
 
 const LINKS = [
   { to: '/dashboard/videos', label: 'Videos', icon: FiFilm },
+  { to: '/dashboard/analytics', label: 'Analytics', icon: FiBarChart2 },
   { to: '/dashboard/history', label: 'Tool history', icon: FiClipboard },
   { to: '/dashboard/account', label: 'Account', icon: FiUser },
 ];
@@ -17,7 +18,7 @@ export function DashboardLayout() {
   return (
     <div className="flex min-h-[calc(100vh-4rem)] flex-col bg-gray-100 md:flex-row">
       <aside className="border-b border-gray-200 bg-white p-4 md:w-60 md:border-r md:border-b-0">
-        <nav className="flex gap-2 md:flex-col">
+        <nav className="flex flex-wrap gap-2 md:flex-col">
           {LINKS.map(({ to, label, icon: Icon }) => (
             <NavLink
               key={to}

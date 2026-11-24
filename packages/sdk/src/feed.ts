@@ -1,6 +1,7 @@
 import { BandwidthStore } from './bandwidth.ts';
 import { Slot, type SlotHost } from './slot.ts';
 import { injectStyles } from './styles.ts';
+import { newId, Telemetry } from './telemetry.ts';
 import type { Feed, FeedEvent, FeedItem, FeedOptions, FeedPage } from './types.ts';
 import { playerWindow } from './window.ts';
 
@@ -53,11 +54,17 @@ export function createFeed(container: HTMLElement, options: FeedOptions): Feed {
   let muted = options.startMuted ?? true;
   let feedVisible = true;
 
+  // Reporting to the VidCraft server is on whenever we know where it is, unless switched off.
+  const telemetryUrl = options.telemetry === false ? null : (options.telemetry?.url ?? (options.apiUrl ? `${options.apiUrl.replace(/\/$/, '')}/events` : null));
+  const telemetry = telemetryUrl ? new Telemetry(new URL(telemetryUrl, location.href).toString()) : null;
+
   // Omit<> applied to each event shape separately, so every event keeps its own fields.
   type EventInput = FeedEvent extends infer E ? (E extends unknown ? Omit<E, 't'> : never) : never;
-  const emit = (event: EventInput) => {
+  const emit = (input: EventInput) => {
+    const event = { t: Date.now(), ...input } as FeedEvent;
+    telemetry?.track(event);
     try {
-      options.onEvent?.({ t: Date.now(), ...event } as FeedEvent);
+      options.onEvent?.(event);
     } catch (err) {
       console.error('VidCraft onEvent handler threw', err); // a host's bug must never stop playback
     }
@@ -81,13 +88,14 @@ export function createFeed(container: HTMLElement, options: FeedOptions): Feed {
 
   // ---- Players ----
   const host: SlotHost = {
-    firstFrame: (slot, startupMs, preloaded, quality) =>
-      slot.item && emit({ type: 'firstFrame', itemId: slot.item.id, index: slot.index, startupMs: Math.round(startupMs), preloaded, quality }),
-    rebuffer: (slot, durationMs) => slot.item && emit({ type: 'rebuffer', itemId: slot.item.id, durationMs }),
-    qualityChange: (slot, from, to) => slot.item && emit({ type: 'qualityChange', itemId: slot.item.id, from, to }),
+    firstFrame: (slot, info) =>
+      slot.item && emit({ type: 'firstFrame', itemId: slot.item.id, viewId: slot.viewId, index: slot.index, ...info, startupMs: Math.round(info.startupMs) }),
+    rebuffer: (slot, durationMs) => slot.item && emit({ type: 'rebuffer', itemId: slot.item.id, viewId: slot.viewId, durationMs }),
+    qualityChange: (slot, from, to) => slot.item && emit({ type: 'qualityChange', itemId: slot.item.id, viewId: slot.viewId, from, to }),
     error: (slot, message) => {
       if (!slot.item) return;
-      emit({ type: 'error', itemId: slot.item.id, message });
+      // A neighbour can fail while preloading, before it has a view of its own.
+      emit({ type: 'error', itemId: slot.item.id, viewId: slot.viewId || newId(), message: message.slice(0, 200) });
       const slide = slides[slot.index];
       if (slide && !slide.querySelector('.vc-slide-error')) {
         const note = el('div', 'vc-slide-error');
@@ -173,14 +181,19 @@ export function createFeed(container: HTMLElement, options: FeedOptions): Feed {
     return assigned.get(activeIndex);
   }
 
+  /** Report how long this video was watched. Safe to call twice: a view is only reported once. */
+  function endView(slot: Slot) {
+    const view = slot.finishView();
+    if (view && slot.item) emit({ type: 'viewEnd', itemId: slot.item.id, viewId: slot.viewId, index: slot.index, ...view });
+  }
+
   function activate(index: number) {
     if (index === activeIndex || index < 0 || index >= items.length) return;
     const now = performance.now();
 
     const leaving = assigned.get(activeIndex);
     if (leaving?.item) {
-      const view = leaving.finishView();
-      emit({ type: 'viewEnd', itemId: leaving.item.id, index: activeIndex, ...view });
+      endView(leaving);
       leaving.pause();
     }
 
@@ -191,7 +204,7 @@ export function createFeed(container: HTMLElement, options: FeedOptions): Feed {
     if (!active?.item) return;
     active.activate(now);
     syncPlayback();
-    emit({ type: 'impression', itemId: active.item.id, index });
+    emit({ type: 'impression', itemId: active.item.id, viewId: active.viewId, index });
     if (index >= items.length - LOAD_MORE_WITHIN) void loadMore();
   }
 
@@ -302,8 +315,18 @@ export function createFeed(container: HTMLElement, options: FeedOptions): Feed {
   });
   root.addEventListener('pointerenter', () => root.focus({ preventScroll: true }));
 
-  const onVisibility = () => syncPlayback();
+  const onVisibility = () => {
+    syncPlayback();
+    // Phones may never fire pagehide: going to the background is the last chance to send what we have.
+    if (document.hidden) void telemetry?.flush(true);
+  };
   document.addEventListener('visibilitychange', onVisibility);
+  const onPageHide = () => {
+    const active = assigned.get(activeIndex);
+    if (active) endView(active); // the viewer is leaving: record how long they watched
+    void telemetry?.flush(true);
+  };
+  window.addEventListener('pagehide', onPageHide);
   const intersection = new IntersectionObserver(([entry]) => {
     feedVisible = (entry?.intersectionRatio ?? 1) >= 0.3;
     syncPlayback();
@@ -361,10 +384,12 @@ export function createFeed(container: HTMLElement, options: FeedOptions): Feed {
     destroy() {
       if (destroyed) return;
       const active = assigned.get(activeIndex);
-      if (active?.item) emit({ type: 'viewEnd', itemId: active.item.id, index: activeIndex, ...active.finishView() });
+      if (active) endView(active);
       destroyed = true;
       clearTimeout(settleTimer);
+      telemetry?.destroy(); // sends whatever is still queued
       document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('pagehide', onPageHide);
       intersection.disconnect();
       resize.disconnect();
       for (const slot of [...assigned.values(), ...free]) slot.destroy();

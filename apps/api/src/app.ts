@@ -5,6 +5,9 @@ import { pinoHttp } from 'pino-http';
 import type { Logger } from '@vidcraft/shared/server';
 import { errorHandler, notFound } from './http/errors.ts';
 import { identifyUser } from './modules/auth/auth.middleware.ts';
+import { analyticsRoutes, eventsRoutes } from './modules/analytics/analytics.routes.ts';
+import type { AnalyticsRepository } from './modules/analytics/analytics.repository.ts';
+import type { AnalyticsService } from './modules/analytics/analytics.service.ts';
 import { feedRoutes } from './modules/feed/feed.routes.ts';
 import type { FeedService } from './modules/feed/feed.service.ts';
 import { authRoutes } from './modules/auth/auth.routes.ts';
@@ -22,6 +25,8 @@ export interface AppDeps {
   jobs: JobsService;
   videos: VideosService;
   feed: FeedService;
+  analytics: AnalyticsService;
+  analyticsRepo: AnalyticsRepository;
   /** Resolves if the app's dependencies are reachable; used by the health check. */
   checkHealth: () => Promise<void>;
 }
@@ -33,6 +38,7 @@ export function createApp(deps: AppDeps): express.Express {
   app.use(pinoHttp({ logger: deps.logger }));
   // Mounted before the credentialed CORS below: this one answers any origin and never sees cookies.
   app.use('/api/v1/feed', feedRoutes(deps.feed));
+  app.use('/api/v1/events', eventsRoutes(deps.analyticsRepo)); // public SDK ingest, same reasoning as the feed
   app.use(cors({ origin: deps.webOrigin, credentials: true }));
   app.use(express.json({ limit: '100kb' })); // video bytes never go through the API
   app.use(cookieParser());
@@ -45,6 +51,7 @@ export function createApp(deps: AppDeps): express.Express {
   app.use('/api/v1/auth', authRoutes(deps.auth, deps.secureCookies));
   app.use('/api/v1/jobs', jobsRoutes(deps.jobs));
   app.use('/api/v1/videos', videosRoutes(deps.videos));
+  app.use('/api/v1/analytics', analyticsRoutes(deps.analytics));
 
   app.use(notFound);
   app.use(errorHandler);

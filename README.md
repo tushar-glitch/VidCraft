@@ -56,6 +56,24 @@ Separate from the quick tools: a signed-in user uploads a video and the worker c
 
 In production, serve the media bucket through a CDN or an R2 public domain and set `MEDIA_BASE_URL`.
 
+## Playback analytics
+
+The feed SDK reports how playback goes, and the dashboard (Analytics in the sidebar) turns it into numbers.
+
+- **Ingest:** `POST /api/v1/events` is public (the SDK runs on other sites), takes batches of up to 100 events as
+  `text/plain` JSON (so it needs no CORS preflight and works with `sendBeacon` on page close), validates every event
+  against the schemas in `packages/shared`, keeps the good ones, and is rate limited to 120 requests a minute per IP.
+- **What is recorded:** impressions, time to first frame (with a stage-by-stage breakdown: playlist, quality playlist,
+  first chunk download, decode and draw), stalls, quality changes, watch time and errors. Each play of a video has a
+  `viewId` that ties its events together. A random per-tab session id is the only identifier; nothing personal is sent.
+- **Dashboard API (signed in, only your own videos):** `GET /api/v1/analytics/overview?days=`,
+  `/analytics/slowest?days=&limit=` and `/analytics/views/:viewId`. Everything is computed from the raw events in
+  `playback_events` with SQL.
+- **Speed buckets** use the player's own bandwidth measurement (slow under 1, medium 1 to 5, fast over 5 Mbit/s), which
+  works in every browser, unlike the Network Information API.
+
+Events are never deleted yet. Before real traffic, add a retention job (for example, drop events older than 90 days).
+
 ## Checks
 
 ```sh
