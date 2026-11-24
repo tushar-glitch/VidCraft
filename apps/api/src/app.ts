@@ -5,6 +5,8 @@ import { pinoHttp } from 'pino-http';
 import type { Logger } from '@vidcraft/shared/server';
 import { errorHandler, notFound } from './http/errors.ts';
 import { identifyUser } from './modules/auth/auth.middleware.ts';
+import { feedRoutes } from './modules/feed/feed.routes.ts';
+import type { FeedService } from './modules/feed/feed.service.ts';
 import { authRoutes } from './modules/auth/auth.routes.ts';
 import type { AuthService } from './modules/auth/auth.service.ts';
 import { jobsRoutes } from './modules/jobs/jobs.routes.ts';
@@ -19,6 +21,7 @@ export interface AppDeps {
   auth: AuthService;
   jobs: JobsService;
   videos: VideosService;
+  feed: FeedService;
   /** Resolves if the app's dependencies are reachable; used by the health check. */
   checkHealth: () => Promise<void>;
 }
@@ -28,6 +31,8 @@ export function createApp(deps: AppDeps): express.Express {
   const app = express();
   app.disable('x-powered-by');
   app.use(pinoHttp({ logger: deps.logger }));
+  // Mounted before the credentialed CORS below: this one answers any origin and never sees cookies.
+  app.use('/api/v1/feed', feedRoutes(deps.feed));
   app.use(cors({ origin: deps.webOrigin, credentials: true }));
   app.use(express.json({ limit: '100kb' })); // video bytes never go through the API
   app.use(cookieParser());

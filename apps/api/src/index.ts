@@ -14,6 +14,7 @@ import { loadApiConfig } from './config.ts';
 import type { Enqueue } from './db.ts';
 import { AuthService } from './modules/auth/auth.service.ts';
 import { UsersRepository } from './modules/auth/users.repository.ts';
+import { FeedService } from './modules/feed/feed.service.ts';
 import { JobsService } from './modules/jobs/jobs.service.ts';
 import { VideosService } from './modules/videos/videos.service.ts';
 
@@ -30,7 +31,10 @@ const enqueue: Enqueue = async (queue, data, db) => {
 
 const auth = new AuthService(new UsersRepository(pool), config.JWT_SECRET);
 const jobs = new JobsService(pool, new JobsRepository(pool), storage, enqueue);
-const videos = new VideosService(pool, new VideosRepository(pool), storage, createMediaStorage(config), mediaUrlFor(config), enqueue);
+const mediaUrl = mediaUrlFor(config);
+const videoRepo = new VideosRepository(pool);
+const videos = new VideosService(pool, videoRepo, storage, createMediaStorage(config), mediaUrl, enqueue);
+const feed = new FeedService(videoRepo, mediaUrl);
 
 const app = createApp({
   logger,
@@ -39,6 +43,7 @@ const app = createApp({
   auth,
   jobs,
   videos,
+  feed,
   checkHealth: async () => {
     await pool.query('select 1');
   },

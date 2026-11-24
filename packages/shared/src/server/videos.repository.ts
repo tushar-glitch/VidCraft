@@ -95,6 +95,30 @@ export class VideosRepository {
     return rows.map(toVideo);
   }
 
+  /**
+   * One page of the public feed, newest first. `cursor` is the position of the last item already seen.
+   * The position is kept as the database's own timestamp text: a JS Date would round it to milliseconds
+   * and could repeat or skip videos uploaded within the same millisecond.
+   */
+  async listFeed(limit: number, cursor?: { ts: string; id: string }): Promise<{ videos: Video[]; lastCursor: { ts: string; id: string } | null; hasMore: boolean }> {
+    const { rows } = await this.db.query<VideoRow & { cursor_ts: string }>(
+      `select *, to_char(created_at at time zone 'utc', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') as cursor_ts
+       from videos
+       where status = 'ready' and publish_status = 'published'
+         and ($1::timestamptz is null or (created_at, id) < ($1::timestamptz, $2::uuid))
+       order by created_at desc, id desc
+       limit $3`,
+      [cursor?.ts ?? null, cursor?.id ?? null, limit + 1],
+    );
+    const page = rows.slice(0, limit);
+    const last = page.at(-1);
+    return {
+      videos: page.map(toVideo),
+      lastCursor: last ? { ts: last.cursor_ts, id: last.id } : null,
+      hasMore: rows.length > limit,
+    };
+  }
+
   /** Returns false if the video was not in `from`, so two callers can't both win a transition. */
   async transition(id: string, from: VideoStatus, to: VideoStatus, db: Queryable = this.db): Promise<boolean> {
     const { rowCount } = await db.query(

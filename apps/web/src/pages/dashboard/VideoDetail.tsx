@@ -182,7 +182,7 @@ export function VideoDetail() {
             </button>
             {video.status === 'ready' && (
               <span className="self-center text-sm text-gray-500">
-                {video.publishStatus === 'published' ? 'Published: will appear in feeds' : 'Unpublished: hidden from feeds'}
+                {video.publishStatus === 'published' ? 'Public: shown in the Explore feed' : 'Private: not shown in the Explore feed'}
               </span>
             )}
           </div>

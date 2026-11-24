@@ -11,6 +11,7 @@ import { DashboardLayout } from './pages/dashboard/DashboardLayout.tsx';
 import { History } from './pages/dashboard/History.tsx';
 import { VideoDetail } from './pages/dashboard/VideoDetail.tsx';
 import { Videos } from './pages/dashboard/Videos.tsx';
+import { Explore } from './pages/Explore.tsx';
 import { Home } from './pages/Home.tsx';
 import { Pricing } from './pages/Pricing.tsx';
 import { CompressPage } from './tools/CompressPage.tsx';
@@ -34,6 +35,7 @@ createRoot(document.getElementById('root')!).render(
         <Navbar />
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/explore" element={<Explore />} />
           <Route path="/compress" element={<CompressPage />} />
           <Route path="/resize" element={<ResizePage />} />
           <Route path="/pricing" element={<Pricing />} />

@@ -147,6 +147,30 @@ export interface VideoDto {
   createdAt: string;
 }
 
+/** A video as the feed SDK needs it. Public: never contains owner details. */
+export interface FeedItemDto {
+  id: string;
+  title: string;
+  /** HLS master playlist. */
+  streamingUrl: string;
+  thumbnailUrl: string;
+  durationSec: number;
+  width: number;
+  height: number;
+  aspectRatio: string;
+}
+
+export interface FeedPageDto {
+  items: FeedItemDto[];
+  /** Pass back as `cursor` to get the next page; null when there are no more. */
+  nextCursor: string | null;
+}
+
+export const feedQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(30).default(10),
+  cursor: z.string().max(200).optional(),
+});
+
 export interface CreateVideoResponse {
   video: VideoDto;
   /** PUT the file here, then call POST /videos/:id/start. */

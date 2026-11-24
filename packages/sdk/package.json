@@ -1,0 +1,15 @@
+{
+  "name": "@vidcraft/sdk",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Web SDK for fast-starting vertical video feeds",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": {
+    "typecheck": "tsc -p .",
+    "test": "tsx --test \"src/**/*.test.ts\"",
+    "build": "vite build"
+  },
+  "dependencies": { "hls.js": "^1.7.4" },
+  "devDependencies": { "vite": "^8.3.8" }
+}
