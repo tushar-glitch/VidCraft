@@ -2,10 +2,14 @@ import type {
   ApiErrorBody,
   CreateJobRequest,
   CreateJobResponse,
+  CreateVideoRequest,
+  CreateVideoResponse,
   JobDto,
   LoginRequest,
   RegisterRequest,
+  UpdateVideoRequest,
   UserDto,
+  VideoDto,
 } from '@vidcraft/shared';
 
 const BASE = `${import.meta.env.VITE_API_URL ?? ''}/api/v1`;
@@ -54,6 +58,14 @@ export const api = {
   startJob: (id: string) => request<{ job: JobDto }>('POST', `/jobs/${id}/start`).then((r) => r.job),
   getJob: (id: string) => request<{ job: JobDto }>('GET', `/jobs/${id}`).then((r) => r.job),
   listJobs: () => request<{ jobs: JobDto[] }>('GET', '/jobs').then((r) => r.jobs),
+
+  createVideo: (body: CreateVideoRequest) => request<CreateVideoResponse>('POST', '/videos', body),
+  startVideo: (id: string) => request<{ video: VideoDto }>('POST', `/videos/${id}/start`).then((r) => r.video),
+  getVideo: (id: string) => request<{ video: VideoDto }>('GET', `/videos/${id}`).then((r) => r.video),
+  listVideos: () => request<{ videos: VideoDto[] }>('GET', '/videos').then((r) => r.videos),
+  updateVideo: (id: string, body: UpdateVideoRequest) =>
+    request<{ video: VideoDto }>('PATCH', `/videos/${id}`, body).then((r) => r.video),
+  deleteVideo: (id: string) => request<void>('DELETE', `/videos/${id}`),
 };
 
 /**

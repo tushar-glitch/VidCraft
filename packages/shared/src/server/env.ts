@@ -10,6 +10,10 @@ export const baseEnvSchema = z.object({
   STORAGE_ACCESS_KEY: z.string().min(1),
   STORAGE_SECRET_KEY: z.string().min(1),
   STORAGE_REGION: z.string().default('auto'),
+  /** Publicly readable bucket for streamable video (HLS playlists, segments, thumbnails). */
+  STORAGE_MEDIA_BUCKET: z.string().min(1).default('vidcraft-media'),
+  /** Public URL the media bucket is served from (a CDN or R2 custom domain in production). */
+  MEDIA_BASE_URL: z.url().optional(),
 });
 export type BaseEnv = z.infer<typeof baseEnvSchema>;
 

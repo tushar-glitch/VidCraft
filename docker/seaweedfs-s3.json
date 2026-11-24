@@ -4,6 +4,10 @@
       "name": "vidcraft-dev",
       "credentials": [{ "accessKey": "vidcraft", "secretKey": "vidcraft-secret" }],
       "actions": ["Admin", "Read", "List", "Tagging", "Write"]
+    },
+    {
+      "name": "anonymous",
+      "actions": ["Read:vidcraft-media", "List:vidcraft-media"]
     }
   ]
 }

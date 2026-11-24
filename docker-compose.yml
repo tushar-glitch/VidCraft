@@ -27,12 +27,17 @@ services:
       interval: 2s
       retries: 30
 
-  # One-shot: creates the bucket, then exits.
+  # One-shot: creates the buckets, then exits.
+  #   vidcraft        private: originals and tool outputs (signed URLs only)
+  #   vidcraft-media  public read: streamable video the player fetches directly
   storage-init:
     image: chrislusf/seaweedfs:4.55
     depends_on:
       storage: { condition: service_healthy }
-    entrypoint: ["sh", "-c", "sleep 3 && echo 's3.bucket.create -name vidcraft' | weed shell -master=storage:9333"]
+    entrypoint:
+      - sh
+      - -c
+      - sleep 3 && printf 's3.bucket.create -name vidcraft\ns3.bucket.create -name vidcraft-media\n' | weed shell -master=storage:9333
 
 volumes:
   pgdata:

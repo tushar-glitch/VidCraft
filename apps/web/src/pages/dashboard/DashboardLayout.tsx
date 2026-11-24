@@ -1,9 +1,10 @@
-import { FiClipboard, FiUser } from 'react-icons/fi';
+import { FiClipboard, FiFilm, FiUser } from 'react-icons/fi';
 import { Navigate, NavLink, Outlet } from 'react-router';
 import { useAuth } from '../../auth/AuthContext.tsx';
 
 const LINKS = [
-  { to: '/dashboard/history', label: 'My jobs', icon: FiClipboard },
+  { to: '/dashboard/videos', label: 'Videos', icon: FiFilm },
+  { to: '/dashboard/history', label: 'Tool history', icon: FiClipboard },
   { to: '/dashboard/account', label: 'Account', icon: FiUser },
 ];
 

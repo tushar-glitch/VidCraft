@@ -9,6 +9,8 @@ import { authRoutes } from './modules/auth/auth.routes.ts';
 import type { AuthService } from './modules/auth/auth.service.ts';
 import { jobsRoutes } from './modules/jobs/jobs.routes.ts';
 import type { JobsService } from './modules/jobs/jobs.service.ts';
+import { videosRoutes } from './modules/videos/videos.routes.ts';
+import type { VideosService } from './modules/videos/videos.service.ts';
 
 export interface AppDeps {
   logger: Logger;
@@ -16,6 +18,7 @@ export interface AppDeps {
   secureCookies: boolean;
   auth: AuthService;
   jobs: JobsService;
+  videos: VideosService;
   /** Resolves if the app's dependencies are reachable; used by the health check. */
   checkHealth: () => Promise<void>;
 }
@@ -36,6 +39,7 @@ export function createApp(deps: AppDeps): express.Express {
   });
   app.use('/api/v1/auth', authRoutes(deps.auth, deps.secureCookies));
   app.use('/api/v1/jobs', jobsRoutes(deps.jobs));
+  app.use('/api/v1/videos', videosRoutes(deps.videos));
 
   app.use(notFound);
   app.use(errorHandler);

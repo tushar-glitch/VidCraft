@@ -79,8 +79,13 @@ function UserMenu() {
         <ul className="absolute right-0 mt-2 w-48 overflow-hidden rounded-md border border-gray-200 bg-white shadow-lg">
           <li className="truncate border-b border-gray-100 px-4 py-2 text-xs text-gray-500">{user.email}</li>
           <li>
+            <button type="button" className="w-full px-4 py-2 text-left hover:bg-blue-50" onClick={() => go('/dashboard/videos')}>
+              Videos
+            </button>
+          </li>
+          <li>
             <button type="button" className="w-full px-4 py-2 text-left hover:bg-blue-50" onClick={() => go('/dashboard/history')}>
-              My jobs
+              Tool history
             </button>
           </li>
           <li>

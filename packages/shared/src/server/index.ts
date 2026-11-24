@@ -8,12 +8,19 @@ import { ObjectStorage } from './storage.ts';
 export * from './env.ts';
 export * from './storage.ts';
 export * from './jobs.repository.ts';
+export * from './videos.repository.ts';
 export type { JobWithMetadata } from 'pg-boss';
 
-/** Queue the API sends to and the worker consumes. Payload: VideoJobMessage. */
+/** Quick tools (compress, resize). Payload: VideoJobMessage. */
 export const VIDEO_QUEUE = 'video.process';
 export interface VideoJobMessage {
   jobId: string;
+}
+
+/** Library videos being converted to streamable HLS. Payload: HlsJobMessage. */
+export const HLS_QUEUE = 'video.hls';
+export interface HlsJobMessage {
+  videoId: string;
 }
 
 export function createLogger(env: Pick<BaseEnv, 'LOG_LEVEL' | 'NODE_ENV'>, name: string) {
@@ -33,16 +40,34 @@ export const createStorage = (env: BaseEnv) =>
     region: env.STORAGE_REGION,
   });
 
-/** Starts pg-boss (it creates its own `pgboss` schema) and makes sure our queue exists. */
+/** The public media bucket: HLS playlists, segments and thumbnails. */
+export const createMediaStorage = (env: BaseEnv) =>
+  new ObjectStorage({
+    endpoint: env.STORAGE_ENDPOINT,
+    bucket: env.STORAGE_MEDIA_BUCKET,
+    accessKey: env.STORAGE_ACCESS_KEY,
+    secretKey: env.STORAGE_SECRET_KEY,
+    region: env.STORAGE_REGION,
+  });
+
+/** Turns a media-bucket key into the public URL a player can fetch. */
+export function mediaUrlFor(env: BaseEnv): (key: string) => string {
+  const base = (env.MEDIA_BASE_URL ?? `${env.STORAGE_ENDPOINT.replace(/\/$/, '')}/${env.STORAGE_MEDIA_BUCKET}`).replace(/\/$/, '');
+  return (key) => `${base}/${key}`;
+}
+
+/** Starts pg-boss (it creates its own `pgboss` schema) and makes sure our queues exist. */
 export async function startQueue(env: Pick<BaseEnv, 'DATABASE_URL'>, logger: Logger): Promise<PgBoss> {
   const boss = new PgBoss(env.DATABASE_URL);
   boss.on('error', (err) => logger.error({ err }, 'pg-boss error'));
   await boss.start();
-  await boss.createQueue(VIDEO_QUEUE, {
-    retryLimit: 2,
-    retryDelay: 10,
-    retryBackoff: true,
-    expireInSeconds: 60 * 60, // a single ffmpeg run longer than an hour is treated as stuck
-  });
+  for (const queue of [VIDEO_QUEUE, HLS_QUEUE]) {
+    await boss.createQueue(queue, {
+      retryLimit: 2,
+      retryDelay: 10,
+      retryBackoff: true,
+      expireInSeconds: 60 * 60, // a single ffmpeg run longer than an hour is treated as stuck
+    });
+  }
   return boss;
 }

@@ -2,11 +2,9 @@ import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import type pg from 'pg';
 import { UPLOAD_LIMITS, type CreateJobRequest, type CreateJobResponse, type JobDto } from '@vidcraft/shared';
-import type { Job, JobsRepository, ObjectStorage, Queryable } from '@vidcraft/shared/server';
+import { VIDEO_QUEUE, type Job, type JobsRepository, type ObjectStorage } from '@vidcraft/shared/server';
+import { inTransaction, type Enqueue } from '../../db.ts';
 import { HttpError } from '../../http/errors.ts';
-
-/** Puts a job on the queue using the given connection, so it can join a transaction. */
-export type EnqueueJob = (jobId: string, db: Queryable) => Promise<void>;
 
 const uploadLimit = (userId: string | undefined) => (userId ? UPLOAD_LIMITS.user : UPLOAD_LIMITS.anonymous);
 
@@ -18,7 +16,7 @@ export class JobsService {
     private readonly pool: pg.Pool,
     private readonly jobs: JobsRepository,
     private readonly storage: ObjectStorage,
-    private readonly enqueue: EnqueueJob,
+    private readonly enqueue: Enqueue,
   ) {}
 
   /** Step 1: record the job and hand back a URL the browser uploads the file to. */
@@ -56,20 +54,12 @@ export class JobsService {
     }
 
     // Status change and queue insert commit together: no queued-but-never-processed jobs.
-    const client = await this.pool.connect();
-    try {
-      await client.query('begin');
-      if (!(await this.jobs.transition(job.id, 'awaiting_upload', 'queued', client))) {
+    await inTransaction(this.pool, async (db) => {
+      if (!(await this.jobs.transition(job.id, 'awaiting_upload', 'queued', db))) {
         throw new HttpError(409, 'already_started', 'Job already started');
       }
-      await this.enqueue(job.id, client);
-      await client.query('commit');
-    } catch (err) {
-      await client.query('rollback');
-      throw err;
-    } finally {
-      client.release();
-    }
+      await this.enqueue(VIDEO_QUEUE, { jobId: job.id }, db);
+    });
     return this.toDto({ ...job, status: 'queued' });
   }
 

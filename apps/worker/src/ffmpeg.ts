@@ -5,32 +5,44 @@ const execFileAsync = promisify(execFile);
 
 export interface ProbeResult {
   durationSec: number;
+  /** Picture size as a viewer sees it: already swapped for phone videos stored sideways with a rotation flag. */
   width: number;
   height: number;
   /** Video stream bitrate in bits/s (falls back to the container's overall bitrate). */
   videoBitrate: number;
+  hasAudio: boolean;
+}
+
+interface ProbeStream {
+  codec_type?: string;
+  width?: number;
+  height?: number;
+  bit_rate?: string;
+  tags?: { rotate?: string };
+  side_data_list?: { rotation?: number }[];
 }
 
 /** Reads basic facts about a video with ffprobe. Arguments are passed as an array: no shell. */
 export async function probe(ffprobePath: string, filePath: string): Promise<ProbeResult> {
   const { stdout } = await execFileAsync(ffprobePath, [
     '-v', 'error',
-    '-select_streams', 'v:0',
-    '-show_entries', 'stream=width,height,bit_rate:format=duration,bit_rate',
+    '-show_entries', 'stream=codec_type,width,height,bit_rate:stream_tags=rotate:stream_side_data=rotation:format=duration,bit_rate',
     '-of', 'json',
     filePath,
   ]);
-  const data = JSON.parse(stdout) as {
-    streams?: { width?: number; height?: number; bit_rate?: string }[];
-    format?: { duration?: string; bit_rate?: string };
-  };
-  const stream = data.streams?.[0];
-  if (!stream?.width || !stream.height) throw new Error('No video stream found in the uploaded file');
+  const data = JSON.parse(stdout) as { streams?: ProbeStream[]; format?: { duration?: string; bit_rate?: string } };
+  const video = data.streams?.find((s) => s.codec_type === 'video' && s.width && s.height);
+  if (!video?.width || !video.height) throw new Error('No video stream found in the uploaded file');
+
+  // ffmpeg applies the rotation flag automatically, so the output is rotated; the numbers must match that.
+  const rotation = Number(video.side_data_list?.find((s) => s.rotation !== undefined)?.rotation ?? video.tags?.rotate ?? 0);
+  const sideways = Math.abs(rotation) % 180 === 90;
   return {
     durationSec: Number(data.format?.duration ?? 0),
-    width: stream.width,
-    height: stream.height,
-    videoBitrate: Number(stream.bit_rate ?? data.format?.bit_rate ?? 0),
+    width: sideways ? video.height : video.width,
+    height: sideways ? video.width : video.height,
+    videoBitrate: Number(video.bit_rate ?? data.format?.bit_rate ?? 0),
+    hasAudio: Boolean(data.streams?.some((s) => s.codec_type === 'audio')),
   };
 }
 

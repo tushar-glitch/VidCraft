@@ -9,6 +9,8 @@ import './index.css';
 import { Account } from './pages/dashboard/Account.tsx';
 import { DashboardLayout } from './pages/dashboard/DashboardLayout.tsx';
 import { History } from './pages/dashboard/History.tsx';
+import { VideoDetail } from './pages/dashboard/VideoDetail.tsx';
+import { Videos } from './pages/dashboard/Videos.tsx';
 import { Home } from './pages/Home.tsx';
 import { Pricing } from './pages/Pricing.tsx';
 import { CompressPage } from './tools/CompressPage.tsx';
@@ -36,6 +38,8 @@ createRoot(document.getElementById('root')!).render(
           <Route path="/resize" element={<ResizePage />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/dashboard" element={<DashboardLayout />}>
+            <Route path="videos" element={<Videos />} />
+            <Route path="videos/:id" element={<VideoDetail />} />
             <Route path="history" element={<History />} />
             <Route path="account" element={<Account />} />
           </Route>

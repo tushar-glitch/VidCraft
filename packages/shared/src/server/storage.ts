@@ -69,7 +69,7 @@ export class ObjectStorage {
     await pipeline(Readable.fromWeb(res.body), createWriteStream(filePath));
   }
 
-  async uploadFile(key: string, filePath: string, contentType: string): Promise<void> {
+  async uploadFile(key: string, filePath: string, contentType: string, cacheControl?: string): Promise<void> {
     const { size } = await stat(filePath);
     const res = await this.client.fetch(this.url(key), {
       method: 'PUT',
@@ -79,6 +79,7 @@ export class ObjectStorage {
         'content-type': contentType,
         'content-length': String(size),
         'x-amz-content-sha256': 'UNSIGNED-PAYLOAD',
+        ...(cacheControl && { 'cache-control': cacheControl }),
       },
       // Required by Node's fetch for streamed request bodies.
       duplex: 'half',
@@ -89,5 +90,28 @@ export class ObjectStorage {
   async remove(key: string): Promise<void> {
     const res = await this.client.fetch(this.url(key), { method: 'DELETE' });
     if (!res.ok && res.status !== 404) throw new Error(`Storage DELETE ${key} failed: ${res.status}`);
+  }
+
+  /** Deletes every object whose key starts with `prefix` (a "folder"). Returns how many were removed. */
+  async removePrefix(prefix: string): Promise<number> {
+    let removed = 0;
+    let token: string | undefined;
+    do {
+      const url = new URL(this.baseUrl);
+      url.searchParams.set('list-type', '2');
+      url.searchParams.set('prefix', prefix);
+      if (token) url.searchParams.set('continuation-token', token);
+      const res = await this.client.fetch(url.toString());
+      if (!res.ok) throw new Error(`Storage LIST ${prefix} failed: ${res.status}`);
+      const xml = await res.text();
+      // Our keys only contain URL-safe characters, so no XML-entity decoding is needed.
+      const keys = [...xml.matchAll(/<Key>([^<]+)<\/Key>/g)].map((m) => m[1]!);
+      for (let i = 0; i < keys.length; i += 10) {
+        await Promise.all(keys.slice(i, i + 10).map((k) => this.remove(k)));
+      }
+      removed += keys.length;
+      token = /<NextContinuationToken>([^<]+)<\/NextContinuationToken>/.exec(xml)?.[1];
+    } while (token);
+    return removed;
   }
 }

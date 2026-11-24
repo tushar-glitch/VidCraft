@@ -91,3 +91,64 @@ export interface UserDto {
 export interface ApiErrorBody {
   error: { code: string; message: string; details?: unknown };
 }
+
+// ---- Video library (streamable videos for feeds) ----
+
+export const VIDEO_STATUSES = ['awaiting_upload', 'queued', 'processing', 'ready', 'failed'] as const;
+export type VideoStatus = (typeof VIDEO_STATUSES)[number];
+
+export const PUBLISH_STATUSES = ['unpublished', 'published'] as const;
+export type PublishStatus = (typeof PUBLISH_STATUSES)[number];
+
+const videoTitle = z.string().trim().min(1).max(200);
+
+export const createVideoRequestSchema = z.object({
+  title: videoTitle,
+  fileName: z.string().trim().min(1).max(255),
+  fileSize: z.number().int().positive(),
+});
+export type CreateVideoRequest = z.infer<typeof createVideoRequestSchema>;
+
+export const updateVideoSchema = z
+  .object({ title: videoTitle, publishStatus: z.enum(PUBLISH_STATUSES) })
+  .partial()
+  .refine((v) => Object.keys(v).length > 0, 'Nothing to update');
+export type UpdateVideoRequest = z.infer<typeof updateVideoSchema>;
+
+/** One quality level of a streamable video. */
+export interface RenditionDto {
+  /** The shorter side of the picture, e.g. "720p". */
+  name: string;
+  width: number;
+  height: number;
+  /** Target video bitrate in kbit/s. */
+  videoKbps: number;
+}
+
+export interface VideoDto {
+  id: string;
+  title: string;
+  status: VideoStatus;
+  /** 0-100 while processing */
+  progress: number;
+  publishStatus: PublishStatus;
+  sourceName: string;
+  sourceSize: number;
+  durationSec: number | null;
+  width: number | null;
+  height: number | null;
+  /** Reduced ratio of the picture as shown, e.g. "9:16". */
+  aspectRatio: string | null;
+  renditions: RenditionDto[];
+  /** HLS master playlist; present once status is "ready". */
+  streamingUrl: string | null;
+  thumbnailUrl: string | null;
+  error: string | null;
+  createdAt: string;
+}
+
+export interface CreateVideoResponse {
+  video: VideoDto;
+  /** PUT the file here, then call POST /videos/:id/start. */
+  uploadUrl: string;
+}
