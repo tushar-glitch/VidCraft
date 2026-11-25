@@ -12,6 +12,8 @@ export const baseEnvSchema = z.object({
   STORAGE_REGION: z.string().default('auto'),
   /** Publicly readable bucket for streamable video (HLS playlists, segments, thumbnails). */
   STORAGE_MEDIA_BUCKET: z.string().min(1).default('vidcraft-media'),
+  /** Development only: let webhooks call localhost and private addresses. Never enable in production. */
+  WEBHOOK_ALLOW_PRIVATE: z.enum(['true', 'false']).default('false').transform((v) => v === 'true'),
   /** Public URL the media bucket is served from (a CDN or R2 custom domain in production). */
   MEDIA_BASE_URL: z.url().optional(),
 });

@@ -234,6 +234,85 @@ export const playbackBatchSchema = z.object({
   events: z.array(z.unknown()).max(100),
 });
 
+// ---- Webhooks: VidCraft calls your server when something happens ----
+
+export const WEBHOOK_EVENTS = ['video.ready', 'video.failed', 'ping'] as const;
+export type WebhookEventType = (typeof WEBHOOK_EVENTS)[number];
+export const MAX_WEBHOOKS_PER_USER = 5;
+
+export const createWebhookSchema = z.object({ url: z.string().trim().max(500) });
+
+export interface WebhookEndpointDto {
+  id: string;
+  url: string;
+  createdAt: string;
+  /** The signing secret. Only returned when the endpoint is created: store it then. */
+  secret?: string;
+}
+
+export interface WebhookDeliveryDto {
+  id: string;
+  eventType: WebhookEventType;
+  status: 'pending' | 'delivered' | 'failed';
+  attempts: number;
+  /** HTTP status your server answered with, on the latest attempt. */
+  lastStatus: number | null;
+  lastError: string | null;
+  createdAt: string;
+  deliveredAt: string | null;
+}
+
+/** The JSON body of every webhook request. */
+export interface WebhookPayload {
+  /** Delivery id: the same for every retry, so receivers can ignore duplicates. */
+  id: string;
+  type: WebhookEventType;
+  createdAt: string;
+  data: Record<string, unknown>;
+}
+
+// ---- Benchmark results (written by apps/bench, shown on the Benchmarks page) ----
+
+export interface BenchSummary {
+  /** How many measurements the numbers come from. */
+  n: number;
+  medianMs: number;
+  p95Ms: number;
+}
+
+export interface BenchRow {
+  network: string;
+  impl: 'sdk' | 'naive';
+  /** First video of a visit: from mounting the feed to the first advancing frame. */
+  cold: BenchSummary;
+  /** Each later video: from the swipe to the first advancing frame. */
+  swipe: BenchSummary;
+  /** Share of swipes that stalled at least once during the first seconds of watching. */
+  stalledShare: number;
+  /** Median total stall time among the swipes that stalled; null if none did. */
+  stallMsMedian: number | null;
+  /** Swipes that never played within the time limit. They count as the limit in the numbers above. */
+  timeouts: number;
+  /** Video data downloaded per video watched, in megabytes, including anything preloaded. */
+  megabytesPerView: number;
+  /** Median shorter side, in pixels, of the quality that started playing (720 means 720p). */
+  qualityMedian: number | null;
+}
+
+export interface BenchmarkResultDto {
+  generatedAt: string;
+  chrome: string;
+  platform: string;
+  /** Sessions per network and implementation. */
+  reps: number;
+  swipesPerSession: number;
+  /** How long each video was watched before the next swipe. */
+  watchMs: number;
+  viewport: { width: number; height: number; deviceScaleFactor: number };
+  networks: { id: string; label: string; downKbps: number | null; latencyMs: number }[];
+  rows: BenchRow[];
+}
+
 // ---- Analytics dashboard (owner-only) ----
 
 export const analyticsQuerySchema = z.object({

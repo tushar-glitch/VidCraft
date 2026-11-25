@@ -4,11 +4,15 @@ import { PgBoss } from 'pg-boss';
 import { pino } from 'pino';
 import type { BaseEnv } from './env.ts';
 import { ObjectStorage } from './storage.ts';
+import { WEBHOOK_QUEUE } from './webhook-emitter.ts';
 
 export * from './env.ts';
 export * from './storage.ts';
 export * from './jobs.repository.ts';
 export * from './videos.repository.ts';
+export * from './webhooks.ts';
+export * from './webhooks.repository.ts';
+export * from './webhook-emitter.ts';
 export type { JobWithMetadata } from 'pg-boss';
 
 /** Quick tools (compress, resize). Payload: VideoJobMessage. */
@@ -69,5 +73,7 @@ export async function startQueue(env: Pick<BaseEnv, 'DATABASE_URL'>, logger: Log
       expireInSeconds: 60 * 60, // a single ffmpeg run longer than an hour is treated as stuck
     });
   }
+  // A webhook that fails is retried six times in all, waiting longer each time (about 30 s, 1 min, 2 min, 4 min, 8 min).
+  await boss.createQueue(WEBHOOK_QUEUE, { retryLimit: 5, retryDelay: 30, retryBackoff: true, expireInSeconds: 60 });
   return boss;
 }

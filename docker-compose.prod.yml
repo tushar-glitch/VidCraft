@@ -1,0 +1,61 @@
+# A project name of its own: without it, Compose would derive "vidcraft" from the folder name, exactly as the
+# development compose file does, and the two stacks would share (and could corrupt) the same volumes.
+name: vidcraft-prod
+
+# Production-style stack: Postgres, one-shot migrations, API, worker and the web server.
+# Object storage is not included: point the STORAGE_* variables at Cloudflare R2 (or any S3-compatible service).
+#
+#   cp .env.production.example .env.production   # then fill it in
+#   docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+#
+# TLS is not included either: put this behind something that terminates HTTPS (the session cookie is
+# marked Secure in production, so the site only works over HTTPS).
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 3s
+      retries: 20
+
+  migrate:
+    build: { context: ., target: migrate }
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  api:
+    build: { context: ., target: api }
+    restart: unless-stopped
+    env_file: .env.production
+    environment:
+      NODE_ENV: production
+      TRUST_PROXY: "true" # nginx is the one proxy in front
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+
+  worker:
+    build: { context: ., target: worker }
+    restart: unless-stopped
+    env_file: .env.production
+    environment:
+      NODE_ENV: production
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+
+  web:
+    build: { context: ., target: web }
+    restart: unless-stopped
+    ports: ["${WEB_PORT:-8080}:80"]
+    depends_on:
+      api: { condition: service_healthy }
+
+volumes:
+  pgdata:

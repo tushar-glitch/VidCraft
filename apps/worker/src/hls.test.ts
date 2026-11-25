@@ -66,6 +66,11 @@ for (const withAudio of [true, false]) {
     }
     assert.equal(master.includes('mp4a'), withAudio, 'audio codec listed only when there is audio');
 
+    // Lowest quality first: that is where a player which doesn't choose for itself will start.
+    const listed = [...master.matchAll(/RESOLUTION=(\d+)x(\d+)/g)].map((m) => Number(m[2]));
+    assert.deepEqual(listed, [...listed].sort((a, b) => a - b), `qualities listed lowest first (${listed.join(', ')})`);
+    assert.equal(listed.length, renditions.length);
+
     // Every quality is cut at the same moments, so a player can switch between them seamlessly.
     const durations = renditions.map((r) => {
       const dirFiles = readdirSync(path.join(outDir, r.name));

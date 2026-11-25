@@ -1,0 +1,20 @@
+{
+  "name": "@vidcraft/bench",
+  "private": true,
+  "type": "module",
+  "description": "Benchmark: the SDK feed vs a naive hls.js feed, under emulated networks",
+  "scripts": {
+    "bench": "tsx src/run.ts",
+    "typecheck": "tsc -p .",
+    "test": "tsx --test \"src/**/*.test.ts\""
+  },
+  "dependencies": {
+    "@vidcraft/sdk": "*",
+    "hls.js": "^1.7.4"
+  },
+  "devDependencies": {
+    "@vidcraft/shared": "*",
+    "playwright-core": "^1.55.0",
+    "vite": "^8.3.8"
+  }
+}

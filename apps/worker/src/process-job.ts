@@ -2,7 +2,7 @@ import { mkdtemp, rm, stat } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import type { JobsRepository, Logger, ObjectStorage } from '@vidcraft/shared/server';
-import { probe, runFfmpeg } from './ffmpeg.ts';
+import { probe, runFfmpeg, userMessage } from './ffmpeg.ts';
 import { buildFfmpegArgs, contentTypeOf } from './operations.ts';
 
 export interface ProcessorDeps {
@@ -58,7 +58,7 @@ export function createJobProcessor({ jobs, storage, logger, ffmpegPath, ffprobeP
       log.info('Completed');
     } catch (err) {
       log.error({ err, isLastAttempt }, 'Processing failed');
-      if (isLastAttempt) await jobs.fail(job.id, err instanceof Error ? err.message : String(err));
+      if (isLastAttempt) await jobs.fail(job.id, userMessage(err)); // the detail is in the log above; users never see paths or commands
       throw err; // lets the queue schedule a retry
     } finally {
       await rm(dir, { recursive: true, force: true });

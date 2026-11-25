@@ -12,6 +12,9 @@ import { Analytics } from './pages/dashboard/Analytics.tsx';
 import { History } from './pages/dashboard/History.tsx';
 import { VideoDetail } from './pages/dashboard/VideoDetail.tsx';
 import { Videos } from './pages/dashboard/Videos.tsx';
+import { Webhooks } from './pages/dashboard/Webhooks.tsx';
+import { Benchmarks } from './pages/Benchmarks.tsx';
+import { Docs } from './pages/Docs.tsx';
 import { Explore } from './pages/Explore.tsx';
 import { Home } from './pages/Home.tsx';
 import { Pricing } from './pages/Pricing.tsx';
@@ -37,12 +40,15 @@ createRoot(document.getElementById('root')!).render(
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/explore" element={<Explore />} />
+          <Route path="/docs" element={<Docs />} />
+          <Route path="/benchmarks" element={<Benchmarks />} />
           <Route path="/compress" element={<CompressPage />} />
           <Route path="/resize" element={<ResizePage />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/dashboard" element={<DashboardLayout />}>
             <Route path="videos" element={<Videos />} />
             <Route path="analytics" element={<Analytics />} />
+            <Route path="webhooks" element={<Webhooks />} />
             <Route path="videos/:id" element={<VideoDetail />} />
             <Route path="history" element={<History />} />
             <Route path="account" element={<Account />} />

@@ -46,7 +46,11 @@ export interface HlsArgsInput {
  * One ffmpeg run produces every rendition. Keyframes are forced on the same 2-second grid in
  * all of them, so segments line up across qualities and a player can switch without a glitch.
  */
-export function buildHlsArgs({ input, outDir, source, renditions }: HlsArgsInput): string[] {
+export function buildHlsArgs({ input, outDir, source, renditions: planned }: HlsArgsInput): string[] {
+  // Lowest quality first. A player that doesn't choose a starting quality for itself (hls.js by default)
+  // starts with the first entry of the master playlist, and starting low is what keeps the first frame
+  // fast on a poor connection; it steps up from there once it has measured the speed.
+  const renditions = [...planned].sort((a, b) => a.height - b.height);
   const n = renditions.length;
   const out = outDir.replaceAll('\\', '/');
 

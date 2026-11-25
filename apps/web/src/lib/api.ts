@@ -13,6 +13,8 @@ import type {
   UserDto,
   VideoDto,
   ViewTraceDto,
+  WebhookDeliveryDto,
+  WebhookEndpointDto,
 } from '@vidcraft/shared';
 
 const BASE = `${import.meta.env.VITE_API_URL ?? ''}/api/v1`;
@@ -67,6 +69,13 @@ export const api = {
     request<{ views: SlowViewDto[] }>('GET', `/analytics/slowest?days=${days}&limit=${limit}`).then((r) => r.views),
   viewTrace: (viewId: string) =>
     request<{ view: ViewTraceDto }>('GET', `/analytics/views/${encodeURIComponent(viewId)}`).then((r) => r.view),
+
+  listWebhooks: () => request<{ webhooks: WebhookEndpointDto[] }>('GET', '/webhooks').then((r) => r.webhooks),
+  createWebhook: (url: string) => request<{ webhook: WebhookEndpointDto }>('POST', '/webhooks', { url }).then((r) => r.webhook),
+  deleteWebhook: (id: string) => request<void>('DELETE', `/webhooks/${id}`),
+  webhookDeliveries: (id: string) => request<{ deliveries: WebhookDeliveryDto[] }>('GET', `/webhooks/${id}/deliveries`).then((r) => r.deliveries),
+  testWebhook: (id: string) => request<{ delivery: WebhookDeliveryDto }>('POST', `/webhooks/${id}/test`).then((r) => r.delivery),
+  resendDelivery: (id: string) => request<{ delivery: WebhookDeliveryDto }>('POST', `/webhooks/deliveries/${id}/resend`).then((r) => r.delivery),
 
   createVideo: (body: CreateVideoRequest) => request<CreateVideoResponse>('POST', '/videos', body),
   startVideo: (id: string) => request<{ video: VideoDto }>('POST', `/videos/${id}/start`).then((r) => r.video),

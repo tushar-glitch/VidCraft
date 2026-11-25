@@ -3,6 +3,17 @@ import { promisify } from 'node:util';
 
 const execFileAsync = promisify(execFile);
 
+/**
+ * A failure caused by the uploaded file, with a message that is safe to show the user.
+ * The real cause (which can contain command lines and server paths) is kept in `cause` and logged,
+ * never shown: anything that isn't a ConversionError reaches the user as a generic message.
+ */
+export class ConversionError extends Error {}
+
+/** What the user and webhook receivers are told about a failure. */
+export const userMessage = (err: unknown): string =>
+  err instanceof ConversionError ? err.message : 'Something went wrong while processing this video. Please try again.';
+
 export interface ProbeResult {
   durationSec: number;
   /** Picture size as a viewer sees it: already swapped for phone videos stored sideways with a rotation flag. */
@@ -24,15 +35,21 @@ interface ProbeStream {
 
 /** Reads basic facts about a video with ffprobe. Arguments are passed as an array: no shell. */
 export async function probe(ffprobePath: string, filePath: string): Promise<ProbeResult> {
-  const { stdout } = await execFileAsync(ffprobePath, [
-    '-v', 'error',
-    '-show_entries', 'stream=codec_type,width,height,bit_rate:stream_tags=rotate:stream_side_data=rotation:format=duration,bit_rate',
-    '-of', 'json',
-    filePath,
-  ]);
+  let stdout: string;
+  try {
+    ({ stdout } = await execFileAsync(ffprobePath, [
+      '-v', 'error',
+      '-show_entries', 'stream=codec_type,width,height,bit_rate:stream_tags=rotate:stream_side_data=rotation:format=duration,bit_rate',
+      '-of', 'json',
+      filePath,
+    ]));
+  } catch (err) {
+    // ffprobe could not make sense of the file (or could not run at all, which the log will show).
+    throw new ConversionError('The file could not be read as a video.', { cause: err });
+  }
   const data = JSON.parse(stdout) as { streams?: ProbeStream[]; format?: { duration?: string; bit_rate?: string } };
   const video = data.streams?.find((s) => s.codec_type === 'video' && s.width && s.height);
-  if (!video?.width || !video.height) throw new Error('No video stream found in the uploaded file');
+  if (!video?.width || !video.height) throw new ConversionError('The file does not contain a video stream.');
 
   // ffmpeg applies the rotation flag automatically, so the output is rotated; the numbers must match that.
   const rotation = Number(video.side_data_list?.find((s) => s.rotation !== undefined)?.rotation ?? video.tags?.rotate ?? 0);
@@ -85,7 +102,10 @@ export function runFfmpeg(
     proc.on('error', reject);
     proc.on('close', (code) => {
       if (code === 0) resolve();
-      else reject(new Error(`ffmpeg exited with code ${code}: ${stderrTail.trim().split('\n').slice(-3).join(' | ')}`));
+      else {
+        const detail = new Error(`ffmpeg exited with code ${code}: ${stderrTail.trim().split('\n').slice(-3).join(' | ')}`);
+        reject(new ConversionError('The video could not be converted. It may be damaged or in an unsupported format.', { cause: detail }));
+      }
     });
   });
 }

@@ -1,7 +1,25 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { BandwidthStore, DEFAULT_BANDWIDTH_BPS } from './bandwidth.ts';
-import { playerWindow } from './window.ts';
+import { FLICK_PX_PER_MS, playerWindow, shouldStartNow } from './window.ts';
+
+const fast = FLICK_PX_PER_MS * 3;
+const slow = FLICK_PX_PER_MS / 3;
+
+test('shouldStartNow: the next or previous video starts at once, even during a fast swipe', () => {
+  assert.equal(shouldStartNow({ target: 3, gestureStart: 2, settled: false, speedPxPerMs: fast }), true);
+  assert.equal(shouldStartNow({ target: 1, gestureStart: 2, settled: false, speedPxPerMs: fast }), true);
+});
+
+test('shouldStartNow: a video further away waits while the viewer is moving fast', () => {
+  assert.equal(shouldStartNow({ target: 4, gestureStart: 2, settled: false, speedPxPerMs: fast }), false);
+  assert.equal(shouldStartNow({ target: 0, gestureStart: 3, settled: false, speedPxPerMs: fast }), false);
+});
+
+test('shouldStartNow: a far video starts once the viewer slows down or the scroll settles on it', () => {
+  assert.equal(shouldStartNow({ target: 4, gestureStart: 2, settled: false, speedPxPerMs: slow }), true);
+  assert.equal(shouldStartNow({ target: 4, gestureStart: 2, settled: true, speedPxPerMs: fast }), true);
+});
 
 test('playerWindow: current, then next, then previous', () => {
   assert.deepEqual(playerWindow(2, 5, 3), [2, 3, 1]);

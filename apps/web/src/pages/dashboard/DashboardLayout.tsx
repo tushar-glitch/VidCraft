@@ -1,10 +1,11 @@
-import { FiBarChart2, FiClipboard, FiFilm, FiUser } from 'react-icons/fi';
+import { FiBarChart2, FiClipboard, FiFilm, FiSend, FiUser } from 'react-icons/fi';
 import { Navigate, NavLink, Outlet } from 'react-router';
 import { useAuth } from '../../auth/AuthContext.tsx';
 
 const LINKS = [
   { to: '/dashboard/videos', label: 'Videos', icon: FiFilm },
   { to: '/dashboard/analytics', label: 'Analytics', icon: FiBarChart2 },
+  { to: '/dashboard/webhooks', label: 'Webhooks', icon: FiSend },
   { to: '/dashboard/history', label: 'Tool history', icon: FiClipboard },
   { to: '/dashboard/account', label: 'Account', icon: FiUser },
 ];

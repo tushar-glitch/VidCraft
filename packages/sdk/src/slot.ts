@@ -66,6 +66,9 @@ export class Slot {
   private quality: number | null = null;
   private networkRetries = 0;
   private mediaRetries = 0;
+  /** Whether the viewer wants sound. A video playing ahead of time stays silent regardless. */
+  private wantMuted: boolean;
+  private prerolling = false;
 
   constructor(
     private readonly host: SlotHost,
@@ -73,6 +76,7 @@ export class Slot {
     loop: boolean,
     muted: boolean,
   ) {
+    this.wantMuted = muted;
     const v = this.video;
     v.className = 'vc-video';
     v.muted = muted;
@@ -117,7 +121,34 @@ export class Slot {
     this.applyBuffer();
   }
 
-  /** This video just became the one on screen: start from the top and play. */
+  setMuted(muted: boolean): void {
+    this.wantMuted = muted;
+    if (!this.prerolling) this.video.muted = muted;
+  }
+
+  /**
+   * The viewer has started swiping towards this video: start it moving now, silently, so that it is
+   * already playing as it slides into view. Starting a paused video costs the browser 100 ms or more
+   * before the first moving frame, and this hides that behind the swipe. It is cheap because the
+   * video is already loaded, and it is undone by cancelPreroll() if the viewer changes their mind.
+   */
+  preroll(): void {
+    if (this.prerolling || !this.item || !this.video.paused) return;
+    this.prerolling = true;
+    this.video.muted = true;
+    this.play();
+  }
+
+  /** The viewer didn't go there after all: stop and rewind, ready to be the next video again. */
+  cancelPreroll(): void {
+    if (!this.prerolling) return;
+    this.prerolling = false;
+    this.video.muted = this.wantMuted;
+    this.video.pause();
+    if (this.video.currentTime > 0) this.video.currentTime = 0;
+  }
+
+  /** This video just became the one on screen: play it from the top (or carry on, if it was playing ahead). */
   activate(now: number): void {
     this.setMode('active');
     this.viewToken++;
@@ -130,7 +161,11 @@ export class Slot {
     this.completed = false;
     this.stallSince = null;
     this.userPaused = false;
-    if (this.video.currentTime > 0) this.video.currentTime = 0;
+    this.playingSince = this.prerolling && !this.video.paused ? performance.now() : null; // watch time starts now, not at the pre-roll
+    this.prerolling = false;
+    this.video.muted = this.wantMuted;
+    // A short pre-roll is simply carried on. A video that was watched earlier starts over.
+    if (this.video.currentTime > 1) this.video.currentTime = 0;
     this.armFirstFrame();
     this.play();
   }
@@ -169,6 +204,8 @@ export class Slot {
   /** Stop loading and detach from the page so the player can be reused for another video. */
   release(): void {
     this.viewToken++;
+    this.prerolling = false;
+    this.video.muted = this.wantMuted;
     this.pause();
     if (this.hls) {
       this.hls.stopLoad();

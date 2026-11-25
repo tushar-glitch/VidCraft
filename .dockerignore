@@ -1,0 +1,11 @@
+.git
+**/node_modules
+**/dist
+legacy
+apps/bench/results
+apps/web/public/sdk
+.env
+.env.*
+!.env.example
+!.env.production.example
+*.log

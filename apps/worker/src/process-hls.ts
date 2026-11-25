@@ -1,8 +1,8 @@
 import { mkdir, mkdtemp, readdir, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import type { Logger, ObjectStorage, VideosRepository } from '@vidcraft/shared/server';
-import { probe, runFfmpeg } from './ffmpeg.ts';
+import type { Logger, ObjectStorage, VideosRepository, WebhookEmitter } from '@vidcraft/shared/server';
+import { probe, runFfmpeg, userMessage } from './ffmpeg.ts';
 import { buildHlsArgs, buildThumbnailArgs, planRenditions } from './hls.ts';
 
 export interface HlsProcessorDeps {
@@ -11,6 +11,10 @@ export interface HlsProcessorDeps {
   storage: ObjectStorage;
   /** Public bucket the player reads from. */
   media: ObjectStorage;
+  /** Public URL of a file in the media bucket. */
+  mediaUrl: (key: string) => string;
+  /** Tells the video's owner, through their webhooks, how it went. */
+  webhooks: WebhookEmitter;
   logger: Logger;
   ffmpegPath: string;
   ffprobePath: string;
@@ -42,7 +46,11 @@ async function inBatches<T>(items: T[], limit: number, task: (item: T) => Promis
 }
 
 /** Download → probe → one ffmpeg run for every quality → upload to the public bucket → mark ready. */
-export function createHlsProcessor({ videos, storage, media, logger, ffmpegPath, ffprobePath }: HlsProcessorDeps) {
+export function createHlsProcessor({ videos, storage, media, mediaUrl, webhooks, logger, ffmpegPath, ffprobePath }: HlsProcessorDeps) {
+  /** A webhook problem must never turn a converted video into a failed one. */
+  const notify = (userId: string, type: 'video.ready' | 'video.failed', data: Record<string, unknown>) =>
+    webhooks.emit(userId, type, data).catch((err) => logger.warn({ err, type }, 'Could not queue webhooks'));
+
   return async function processHls({ videoId, isLastAttempt }: { videoId: string; isLastAttempt: boolean }): Promise<void> {
     const log = logger.child({ videoId });
     const video = await videos.findById(videoId);
@@ -99,11 +107,22 @@ export function createHlsProcessor({ videos, storage, media, logger, ffmpegPath,
       });
       await storage.remove(video.sourceKey); // the original isn't kept once converted
       log.info('Ready');
+      await notify(video.userId, 'video.ready', {
+        videoId: video.id,
+        title: video.title,
+        durationSec: source.durationSec,
+        width: source.width,
+        height: source.height,
+        streamingUrl: mediaUrl(`${prefix}/master.m3u8`),
+        thumbnailUrl: mediaUrl(`${prefix}/thumb.jpg`),
+      });
     } catch (err) {
       log.error({ err, isLastAttempt }, 'HLS processing failed');
       if (isLastAttempt) {
-        await videos.fail(video.id, err instanceof Error ? err.message : String(err));
+        const message = userMessage(err); // the detail is in the log above; users never see paths or commands
+        await videos.fail(video.id, message);
         await media.removePrefix(prefix).catch(() => {}); // don't leave half-uploaded files behind
+        await notify(video.userId, 'video.failed', { videoId: video.id, title: video.title, error: message.slice(0, 300) });
       }
       throw err; // lets the queue schedule a retry
     } finally {

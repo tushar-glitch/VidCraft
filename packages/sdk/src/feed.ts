@@ -3,10 +3,10 @@ import { Slot, type SlotHost } from './slot.ts';
 import { injectStyles } from './styles.ts';
 import { newId, Telemetry } from './telemetry.ts';
 import type { Feed, FeedEvent, FeedItem, FeedOptions, FeedPage } from './types.ts';
-import { playerWindow } from './window.ts';
+import { playerWindow, shouldStartNow } from './window.ts';
 
-/** Faster than this (px per ms) the viewer is flicking past: don't start videos they're about to skip. */
-const FLICK_PX_PER_MS = 1.5;
+/** Start the next video moving once the viewer has swiped this far (as a fraction of a slide) towards it. */
+const PREROLL_AFTER = 0.12;
 /** If scrolling stops without ever settling exactly on a slide, activate the nearest after this long. */
 const SETTLE_MS = 120;
 /** Fetch the next page when this close to the end. */
@@ -119,7 +119,7 @@ export function createFeed(container: HTMLElement, options: FeedOptions): Feed {
   // ---- Muting ----
   function setMuted(next: boolean) {
     muted = next;
-    for (const slot of [...assigned.values(), ...free]) slot.video.muted = next;
+    for (const slot of [...assigned.values(), ...free]) slot.setMuted(next);
     muteButton.innerHTML = muted ? ICON_MUTED : ICON_SOUND;
     muteButton.setAttribute('aria-label', muted ? 'Turn sound on' : 'Turn sound off');
   }
@@ -253,6 +253,30 @@ export function createFeed(container: HTMLElement, options: FeedOptions): Feed {
   let lastTop = 0;
   let lastTime = performance.now();
   let settleTimer: ReturnType<typeof setTimeout> | undefined;
+  /** Which video was current when the scroll in progress began; -1 when no scroll is in progress. */
+  let gestureStart = -1;
+  /** The neighbour that has been started ahead of time because the viewer is swiping towards it. */
+  let prerolled: Slot | null = null;
+
+  /** Once the scroll is over, a neighbour that was started ahead but not arrived at goes back to waiting. */
+  const finishGesture = () => {
+    prerolled?.cancelPreroll(); // does nothing if that video has since become the current one
+    prerolled = null;
+    gestureStart = -1;
+  };
+  const endGesture = () => {
+    activate(nearestIndex());
+    finishGesture();
+  };
+  const prerollTowards = (top: number) => {
+    const travelled = top / (scroller.clientHeight || 1) - gestureStart; // in slides; the sign is the direction
+    const target = Math.abs(travelled) >= PREROLL_AFTER ? gestureStart + Math.sign(travelled) : -1;
+    const slot = target !== activeIndex ? assigned.get(target) : undefined;
+    if (slot === prerolled) return;
+    prerolled?.cancelPreroll(); // the viewer turned round
+    prerolled = slot ?? null;
+    slot?.preroll();
+  };
   scroller.addEventListener(
     'scroll',
     () => {
@@ -262,18 +286,25 @@ export function createFeed(container: HTMLElement, options: FeedOptions): Feed {
       lastTop = top;
       lastTime = now;
       clearTimeout(settleTimer);
+      if (gestureStart === -1) gestureStart = activeIndex;
+      prerollTowards(top);
 
       const target = nearestIndex();
-      if (target === activeIndex) return;
+      if (target === activeIndex) {
+        // Back where it started (or not yet half way): if scrolling stops here, tidy up. Browsers without
+        // a `scrollend` event rely on this timer.
+        settleTimer = setTimeout(endGesture, SETTLE_MS);
+        return;
+      }
       const settled = Math.abs(top - target * scroller.clientHeight) <= 1;
-      // Start the next video as soon as it is mostly on screen, but not while the viewer is
-      // flicking past it: that would load videos they never watch and delay the one they stop on.
-      if (settled || speed < FLICK_PX_PER_MS) activate(target);
-      else settleTimer = setTimeout(() => activate(nearestIndex()), SETTLE_MS);
+      if (shouldStartNow({ target, gestureStart, settled, speedPxPerMs: speed })) {
+        activate(target);
+        if (settled) finishGesture();
+      } else settleTimer = setTimeout(endGesture, SETTLE_MS);
     },
     { passive: true },
   );
-  scroller.addEventListener('scrollend', () => activate(nearestIndex()));
+  scroller.addEventListener('scrollend', endGesture);
 
   scroller.addEventListener('click', (e) => {
     const slide = (e.target as Element).closest<HTMLElement>('.vc-slide');

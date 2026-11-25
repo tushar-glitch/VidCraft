@@ -21,8 +21,14 @@ The container needs a height. The feed styles itself (every class is prefixed `v
   same elements also keeps a phone browser's permission to autoplay, which belongs to the element.
 - **Preloading with a budget.** The next and previous videos load in the background, but only about
   4 seconds each; the current video buffers about 20 seconds ahead.
-- **Flick-aware activation.** A video starts as soon as it is mostly on screen, but not while the viewer
-  is flicking past it, so skipped videos are never started.
+- **Starting ahead of the swipe.** A paused video needs the browser 100 ms or more to show its first moving
+  frame once told to play. So when the viewer starts swiping towards the next or previous video (already
+  loaded, since it has a player), it begins playing, silently, about 12% of the way through the swipe: it is
+  already moving as it slides into view. If the viewer changes their mind it stops and rewinds.
+- **Flick-aware activation.** The next or previous video becomes the current one as soon as it is half on
+  screen. A video further away (a programmatic jump, a dragged scrollbar) waits until the viewer slows down or
+  stops, so videos flicked past are never started or loaded. (An earlier version applied this wait to every
+  swipe, which added the whole swipe animation to each start; the benchmark showed it.)
 - **Starting quality.** The SDK remembers the viewer's measured bandwidth (in `localStorage`, with an
   in-memory fallback) so the next video and the next visit start at a fitting quality. It never
   downloads a quality larger than the player's on-screen size.

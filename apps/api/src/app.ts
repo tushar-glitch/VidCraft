@@ -15,18 +15,23 @@ import type { AuthService } from './modules/auth/auth.service.ts';
 import { jobsRoutes } from './modules/jobs/jobs.routes.ts';
 import type { JobsService } from './modules/jobs/jobs.service.ts';
 import { videosRoutes } from './modules/videos/videos.routes.ts';
+import { webhooksRoutes } from './modules/webhooks/webhooks.routes.ts';
+import type { WebhooksService } from './modules/webhooks/webhooks.service.ts';
 import type { VideosService } from './modules/videos/videos.service.ts';
 
 export interface AppDeps {
   logger: Logger;
   webOrigin: string;
   secureCookies: boolean;
+  /** Whether one reverse proxy sits in front, so the client's address comes from X-Forwarded-For. */
+  trustProxy?: boolean;
   auth: AuthService;
   jobs: JobsService;
   videos: VideosService;
   feed: FeedService;
   analytics: AnalyticsService;
   analyticsRepo: AnalyticsRepository;
+  webhooks: WebhooksService;
   /** Resolves if the app's dependencies are reachable; used by the health check. */
   checkHealth: () => Promise<void>;
 }
@@ -35,6 +40,7 @@ export interface AppDeps {
 export function createApp(deps: AppDeps): express.Express {
   const app = express();
   app.disable('x-powered-by');
+  if (deps.trustProxy) app.set('trust proxy', 1);
   app.use(pinoHttp({ logger: deps.logger }));
   // Mounted before the credentialed CORS below: this one answers any origin and never sees cookies.
   app.use('/api/v1/feed', feedRoutes(deps.feed));
@@ -52,6 +58,7 @@ export function createApp(deps: AppDeps): express.Express {
   app.use('/api/v1/jobs', jobsRoutes(deps.jobs));
   app.use('/api/v1/videos', videosRoutes(deps.videos));
   app.use('/api/v1/analytics', analyticsRoutes(deps.analytics));
+  app.use('/api/v1/webhooks', webhooksRoutes(deps.webhooks));
 
   app.use(notFound);
   app.use(errorHandler);

@@ -74,6 +74,49 @@ The feed SDK reports how playback goes, and the dashboard (Analytics in the side
 
 Events are never deleted yet. Before real traffic, add a retention job (for example, drop events older than 90 days).
 
+## Webhooks
+
+Add a URL under Webhooks in the dashboard and VidCraft sends it a signed `POST` when a video finishes converting
+(`video.ready`) or cannot be converted (`video.failed`), plus a `ping` on demand.
+
+- **Signing:** `X-VidCraft-Signature: t=<unix seconds>,v1=<HMAC-SHA256 of "<t>.<raw body>">`, with a per-endpoint secret
+  shown once. Receivers reject bad signatures and anything older than 5 minutes. The verification code on the Docs page
+  is the same file the tests run (`apps/web/src/docs/verify-signature.js`).
+- **Delivery:** done by the worker through the queue. A non-2xx answer or a 10-second timeout is retried five more times
+  with growing waits; the delivery id is the same on every retry. Every attempt is recorded and can be resent.
+- **Safety:** a webhook is the server calling a URL a user chose, so it is refused for private networks, loopback and
+  cloud-metadata addresses. The check runs on the address actually connected to (so a name that later points
+  somewhere internal is caught), redirects are never followed, and credentials in URLs are rejected.
+  `WEBHOOK_ALLOW_PRIVATE=true` relaxes this for local development only.
+- **Failure messages** shown to users and sent in `video.failed` are generic; the real cause (which can include commands
+  and server paths) goes to the log only.
+
+## Benchmark
+
+`apps/bench` compares the SDK feed with a plain hls.js feed (one player per video, defaults) under emulated networks:
+real Chrome with a phone viewport, fresh profile per session, one meter outside both feeds timing each video from the swipe
+to the first moving frame, feeds taking turns going first, a discarded warm-up, and a rest between sessions.
+
+```sh
+npm run bench -w @vidcraft/bench -- --reps 4    # needs the API running with 6+ published videos, and Chrome
+```
+
+Results are written to `apps/bench/results/` and published to `apps/web/src/data/benchmark.json`, which the Benchmarks page
+shows. Don't edit server code while it runs: the dev servers restart on every change and ruin the session in progress.
+
+## Production
+
+```sh
+cp .env.production.example .env.production      # fill it in
+docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+```
+
+Postgres, one-shot migrations, the API, the worker and nginx (serving the site, proxying `/api`, and serving the SDK
+with permissive CORS so other sites can load it). Object storage is external: Cloudflare R2 with one private and one
+publicly readable bucket. Put TLS in front: the session cookie is `Secure` in production. `TRUST_PROXY` is set for the API
+behind nginx so the per-IP rate limit sees real visitors. The compose project has its own name so it can't touch the
+development volumes.
+
 ## Checks
 
 ```sh

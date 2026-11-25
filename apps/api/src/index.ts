@@ -8,6 +8,8 @@ import {
   mediaUrlFor,
   startQueue,
   VideosRepository,
+  WebhookEmitter,
+  WebhooksRepository,
 } from '@vidcraft/shared/server';
 import { createApp } from './app.ts';
 import { loadApiConfig } from './config.ts';
@@ -19,6 +21,7 @@ import { AnalyticsService } from './modules/analytics/analytics.service.ts';
 import { FeedService } from './modules/feed/feed.service.ts';
 import { JobsService } from './modules/jobs/jobs.service.ts';
 import { VideosService } from './modules/videos/videos.service.ts';
+import { WebhooksService } from './modules/webhooks/webhooks.service.ts';
 
 const config = loadApiConfig();
 const logger = createLogger(config, 'api');
@@ -39,17 +42,21 @@ const videos = new VideosService(pool, videoRepo, storage, createMediaStorage(co
 const feed = new FeedService(videoRepo, mediaUrl);
 const analyticsRepo = new AnalyticsRepository(pool);
 const analytics = new AnalyticsService(analyticsRepo);
+const webhookRepo = new WebhooksRepository(pool);
+const webhooks = new WebhooksService(webhookRepo, new WebhookEmitter(webhookRepo, (queue, data) => boss.send(queue, data)), config.WEBHOOK_ALLOW_PRIVATE);
 
 const app = createApp({
   logger,
   webOrigin: config.WEB_ORIGIN,
   secureCookies: config.NODE_ENV === 'production',
+  trustProxy: config.TRUST_PROXY,
   auth,
   jobs,
   videos,
   feed,
   analytics,
   analyticsRepo,
+  webhooks,
   checkHealth: async () => {
     await pool.query('select 1');
   },

@@ -1,0 +1,193 @@
+{
+  "generatedAt": "2026-11-25T04:27:09.313Z",
+  "chrome": "157.0.8103.39",
+  "platform": "Windows_NT 10.0.19045, 4 cores",
+  "reps": 2,
+  "swipesPerSession": 5,
+  "watchMs": 3000,
+  "viewport": {
+    "width": 390,
+    "height": 844,
+    "deviceScaleFactor": 2
+  },
+  "networks": [
+    {
+      "id": "fast",
+      "label": "Fast (no limit)",
+      "downKbps": null,
+      "latencyMs": 0
+    },
+    {
+      "id": "4g",
+      "label": "4G: 9 Mbit/s, 70 ms",
+      "downKbps": 9000,
+      "latencyMs": 70
+    },
+    {
+      "id": "slow-4g",
+      "label": "Slow 4G: 1.6 Mbit/s, 150 ms",
+      "downKbps": 1600,
+      "latencyMs": 150
+    },
+    {
+      "id": "3g",
+      "label": "3G: 0.4 Mbit/s, 400 ms",
+      "downKbps": 400,
+      "latencyMs": 400
+    }
+  ],
+  "rows": [
+    {
+      "network": "fast",
+      "impl": "sdk",
+      "cold": {
+        "n": 2,
+        "medianMs": 402,
+        "p95Ms": 418
+      },
+      "swipe": {
+        "n": 10,
+        "medianMs": 242,
+        "p95Ms": 269
+      },
+      "stalledShare": 0,
+      "stallMsMedian": null,
+      "timeouts": 0,
+      "megabytesPerView": 2.44,
+      "qualityMedian": 540
+    },
+    {
+      "network": "fast",
+      "impl": "naive",
+      "cold": {
+        "n": 2,
+        "medianMs": 271,
+        "p95Ms": 300
+      },
+      "swipe": {
+        "n": 10,
+        "medianMs": 270,
+        "p95Ms": 352
+      },
+      "stalledShare": 0,
+      "stallMsMedian": null,
+      "timeouts": 0,
+      "megabytesPerView": 2.23,
+      "qualityMedian": 360
+    },
+    {
+      "network": "4g",
+      "impl": "sdk",
+      "cold": {
+        "n": 2,
+        "medianMs": 1074,
+        "p95Ms": 1083
+      },
+      "swipe": {
+        "n": 10,
+        "medianMs": 245,
+        "p95Ms": 257
+      },
+      "stalledShare": 0,
+      "stallMsMedian": null,
+      "timeouts": 0,
+      "megabytesPerView": 2.07,
+      "qualityMedian": 540
+    },
+    {
+      "network": "4g",
+      "impl": "naive",
+      "cold": {
+        "n": 2,
+        "medianMs": 694,
+        "p95Ms": 707
+      },
+      "swipe": {
+        "n": 10,
+        "medianMs": 683,
+        "p95Ms": 718
+      },
+      "stalledShare": 0,
+      "stallMsMedian": null,
+      "timeouts": 0,
+      "megabytesPerView": 2.23,
+      "qualityMedian": 360
+    },
+    {
+      "network": "slow-4g",
+      "impl": "sdk",
+      "cold": {
+        "n": 2,
+        "medianMs": 4095,
+        "p95Ms": 4120
+      },
+      "swipe": {
+        "n": 10,
+        "medianMs": 264,
+        "p95Ms": 431
+      },
+      "stalledShare": 0.6,
+      "stallMsMedian": 975,
+      "timeouts": 0,
+      "megabytesPerView": 0.68,
+      "qualityMedian": 360
+    },
+    {
+      "network": "slow-4g",
+      "impl": "naive",
+      "cold": {
+        "n": 2,
+        "medianMs": 2384,
+        "p95Ms": 2386
+      },
+      "swipe": {
+        "n": 10,
+        "medianMs": 1787,
+        "p95Ms": 1850
+      },
+      "stalledShare": 0,
+      "stallMsMedian": null,
+      "timeouts": 0,
+      "megabytesPerView": 0.72,
+      "qualityMedian": 360
+    },
+    {
+      "network": "3g",
+      "impl": "sdk",
+      "cold": {
+        "n": 2,
+        "medianMs": 16010,
+        "p95Ms": 16103
+      },
+      "swipe": {
+        "n": 10,
+        "medianMs": 178,
+        "p95Ms": 10891
+      },
+      "stalledShare": 1,
+      "stallMsMedian": 1066,
+      "timeouts": 0,
+      "megabytesPerView": 0.36,
+      "qualityMedian": 360
+    },
+    {
+      "network": "3g",
+      "impl": "naive",
+      "cold": {
+        "n": 2,
+        "medianMs": 8691,
+        "p95Ms": 8709
+      },
+      "swipe": {
+        "n": 10,
+        "medianMs": 5723,
+        "p95Ms": 90000
+      },
+      "stalledShare": 0.9,
+      "stallMsMedian": 1060,
+      "timeouts": 1,
+      "megabytesPerView": 0.22,
+      "qualityMedian": 360
+    }
+  ]
+}
